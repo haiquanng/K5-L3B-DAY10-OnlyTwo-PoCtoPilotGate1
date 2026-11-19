@@ -406,18 +406,18 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 | | **v1** (phút 105–115, TRƯỚC khi nhận thẻ sự cố) |
 |---|---|
 | Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | `bd34e9e` (tiêu chí hash `fc78754e`) |
-| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | |
-| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `R-base-before-20261119-155220-f6ac62` · bộ nền với cổng vòng 1 (prepared): ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt phần nào, vì sao | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | |
-| Nếu Dừng: bài học ghi lại | |
+| Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | `f4c270e2` (commit `aec5d81`) |
+| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `R-base-before-20261119-155220-f6ac62` · bộ nền với cổng vòng 1 (prepared): `R-base-prepared-20261119-163352-3c7277` (chạy trên bản chốt `f4c270e2` đã push; gate: mọi dòng `[ĐẠT ]`) |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Không (`vượt trần: không`). Sát trần duy nhất: tỉ lệ chuyển người 0,2364 so với ngưỡng nên có 0,25 |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Kho **DN**: chi phí 4.646đ/ticket, cao nhất trong 4 kho nhưng vẫn dưới trần 7.000đ, pass 1,0. Ở base, kho HCM và hãng VNX tệ nhất (pass 0,96 / 0,9714 do `T-002@55`), ở prepared đã về 1,0. Dòng kho `?` (10.359đ) là ticket không gắn đơn, luôn chuyển người. Nhìn riêng phân khúc này quyết định **không đổi** |
+| Quyết định (khoanh một) | **Tiếp tục** · Thu hẹp · Cải tiến thêm · Dừng (có điều kiện: chỉ mở với khách thật sau khi v2 xác nhận trên gói sự cố) |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-base-prepared-20261119-163352-3c7277`: pass_rate 1,0 [1,0; 1,0] ≥ 0,90 ĐẠT · pass_k 1,0 ≥ 0,85 ĐẠT (base `R-base-before-20261119-155220-f6ac62`: 0,9909 · 0,9545) |
+| Bằng chứng 2 | `R-base-prepared-20261119-163352-3c7277`: hoàn sai 0đ · lỗi hãng oan 0 · lộ dữ liệu 0, cả ba ĐẠT ngưỡng = 0. Ở base là 20.000đ · 1 · 0 (`T-002@55`); cổng vòng 1 (tính lại quyền lợi từ tracking) đã chặn |
+| Bằng chứng 3 | `R-base-prepared-20261119-163352-3c7277`: chi phí 4.510đ/ticket ≤ 7.000đ · ROI 1,22 ≥ 0,4 · 0 ca ùn · tỉ lệ chuyển người 0,2364 ≤ 0,25; tổng hoàn tự động 155.000đ/ngày, dưới trần bàn 1.400.000đ |
+| Khớp dòng nào trong `decision_rule` đã ký? | "Tiếp tục: cả 5 ngưỡng bắt buộc đạt … 3 ngưỡng business_ops đạt, report không còn dòng vượt trần; escalation_rate ≤ 0,25". Vế "VÀ gói sự cố" chưa kiểm được ở v1 (chưa có thẻ), nên Tiếp tục ở v1 kèm điều kiện: kiểm lại ở v2 trên gói sự cố, trượt thì đổi quyết định |
+| Nếu Thu hẹp: cắt phần nào, vì sao | Không áp dụng (v1 chọn Tiếp tục) |
+| Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | Không áp dụng |
+| Nếu Dừng: bài học ghi lại | Không áp dụng |
 | Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | Bộ nền chỉ 22 ticket, MockLLM tất định, chính sách REFUND-v3: chưa đo model thật, chưa đo ngày sau 2026-12-01 (REFUND-v4 hạ hạn mức tự động còn 100.000đ), chưa đo nhánh `fail_open` khi LLM lỗi và chưa đo khối lượng giờ cao điểm |
 | Ngày quyết định lại (trừ khi Dừng) | 2026-11-30 (một ngày trước khi REFUND-v4 có hiệu lực); dự: Quân, Lên, Nguyên, NV-HANH, NV-TUNG |
 | PIC ký | Nguyễn Văn Hải Quân (Sản phẩm và kinh doanh) |
