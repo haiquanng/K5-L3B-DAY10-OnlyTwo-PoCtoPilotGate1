@@ -31,9 +31,11 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | `R-S4-prepared-20261119-163417-3c7277` (trong grade `R-S4-grade-20261119-163416-3c7277`) | S4 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0.9073 [0.8439, 0.9659] | 0.7805 | 0 · 0 · 0 | 0.4976 | Cổng vòng 1 chặn hết tiền sai và lỗi hãng oan (base 160.000đ · 27), nhưng chuyển người tăng 0,37 → 0,50: 10 ca ùn, tổng hoàn 422.000đ > ngân sách 300.000đ |
-| 2 | | Sx · after | | | | | | |
-| 3 | | Sx · after | | | | | | |
-| 4 | | base · after | (kiểm không regression) | | | | | |
+| 2 | `R-S4-after-20261119-163830-8ae87d` | S4 · after | `guards.py` nhánh `file_carrier_fault`: hãng không có lỗi theo tracking → `deny` (bỏ lệnh ghi lỗi) thay vì `escalate` cả ticket | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.4049 | Hết 19 lượt hỏng "đã hoàn mà vẫn chuyển người"; ca ùn 10 → 7, còn vượt ngân sách 422.000đ |
+| 3 | `R-S4-after-20261119-163839-8abc69` | S4 · after | `business.daily_refund_cap_vnd` 1.400.000 → 300.000 (ngân sách Finance ngày sale) | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.5512 | Tổng hoàn 422.000đ → 292.000đ ≤ 300.000đ; đổi lại chuyển người tăng, còn 8 ca ùn, chờ 106 phút |
+| 4 | `R-base-after-20261119-164006-d1ada5` | base · after | (kiểm không regression, sau cả 4 thay đổi) | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.2462 | Bộ nền không ca mới hỏng, không vượt trần; độ phủ 0,59 (chỉ HN + HCM), ROI 0,77 |
+| 5 | `R-S4-after-20261119-163939-bb79b2` | S4 · after | `business.pilot_scope` all → kho HN + HCM (thử trước: 2 người trực thì hết ùn nhưng ROI 0,30 < 0,4) | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.3565 | 0 ca ùn, chờ lâu nhất 40 phút, chi phí 5.747đ, ROI 0,74, tổng hoàn 292.000đ: hết vượt trần; độ phủ 0,561 |
+| 6 | `R-S4-after-20261119-164006-d1ada5` · grade `R-S4-grade-20261119-164007-d1ada5` | S4 · after | `monitors.py`: thêm `fail_open_rate`, `peak_hour_review_load` | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.3565 | Grade PASS-VISIBLE: 6 ô đều ✅ (trừ hidden), monitor sáng đèn (fail_open 0 → 0,2435; tải giờ cao điểm 1 → 10 ca); "được phép cân nhắc Tiếp tục" |
 
 ---
 
@@ -251,9 +253,9 @@ Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chư
 
 ### Câu 3.2 · Một specification mà nếu bị vi phạm thì gây ra tác hại trên thẻ
 
-Kiểm được bằng code hoặc bằng một con số trong report: …
+Kiểm được bằng code hoặc bằng một con số trong report: **(a)** mọi lệnh ghi (hoàn tiền, ghi lỗi hãng) chỉ được thực hiện khi số tiền và lỗi hãng khớp quyền lợi tính từ tracking và chính sách đang hiệu lực, kể cả khi LLM không trả lời (không có nhánh "fail_open" nào được ghi tiền hay ghi lỗi theo ý model); **(b)** trong một ngày vận hành, tổng hoàn tự động ≤ ngân sách Finance của chính ngày đó và không ca chuyển người nào chờ quá 60 phút.
 
-Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): …
+Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): (a) `write_gate` nhánh `issue_refund` (so `entitlement_vnd`) và nhánh `file_carrier_fault` (so `carrier_at_fault`), report dòng `wrongful_refund_vnd`, `wrongful_carrier_faults`; monitor `fail_open_rate`. (b) report dòng "tổng hoàn tự động một ngày … ngân sách", "hàng chờ … ca bị ùn", "chờ lâu nhất"; monitor `peak_hour_review_load` so với sức duyệt 6 ca/giờ/người.
 
 ### Câu 3.3 · Một giả định về môi trường mà người thiết kế đã ngầm tin, nhưng nhiều khả năng sai ngoài thực tế
 
@@ -265,7 +267,7 @@ Vì sao có thể sai: …
 
 <a id="c6"></a>
 
-## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `__________`)
+## C6 · Câu 3.4 · Fault tree TRƯỚC khi sửa (mã lần chạy: `R-S4-prepared-20261119-163417-3c7277`, base `R-S4-before-20261119-163417-3c7277`)
 
 **Khung tư duy.** Đi từ **tác hại** ngược về nguyên nhân, không đi từ lỗi mình tình cờ thấy. Mỗi tầng hỏi "điều gì phải xảy
 ra thì điều trên mới xảy ra", nối bằng **HOẶC** (một trong các nhánh là đủ) hoặc **VÀ** (phải đồng thời). Một biện pháp tốt
@@ -280,21 +282,28 @@ thường biến một nhánh HOẶC thành VÀ: tác hại chỉ còn xảy ra 
 Ít nhất hai nhánh ở hai tầng khác nhau (kỹ thuật, kinh doanh, con người); mỗi lá có bằng chứng (ticket@seed, trường dữ liệu, hoặc một dòng của report).
 
 ```
-[ĐỈNH] Tác hại: ______________________________ (cho ai: __________, đo bằng: __________)
+[ĐỈNH] Tác hại: đêm 11.11 khách chờ duyệt quá 60 phút, hãng bị ghi lỗi oan, Finance bị hoàn vượt ngân sách ngày sale
+       (cho ai: khách, hãng VNX/GHSH/MKD…, Finance + NV-OANH, NV-HANH; đo bằng: số ca ùn & chờ lâu nhất, wrongful_carrier_faults,
+        tổng hoàn tự động/ngày so với 300.000đ — base: 4 ca ùn/78 phút, 27 lỗi oan, 466.000đ)
  └─ HOẶC
- ├─ [1] ______________________________ tầng: đầu vào / data / hành động / quyền hạn / vận hành / kinh doanh
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- ├─ [2] ______________________________ tầng: ______
- │ └─ vì: ________________________ bằng chứng: ticket ______@seed ____
- └─ [3] ______________________________ tầng: ______
- └─ vì: ________________________ bằng chứng: ______
+ ├─ [1] Ghi lỗi hãng / hoàn tiền theo nhánh fail_open khi LLM nghẽn          tầng: hành động (kỹ thuật)
+ │   └─ VÀ: LLM trả 429 ở 60% lần policy_check (llm_faults)  VÀ  agent "giữ khách vui": do_fault = True, bỏ qua delay_cause
+ │       bằng chứng: S4-02@11 base, dòng 06 llm_fallback fail_open, dòng 09 file_carrier_fault VNX, cause MERCHANT_HANDOVER
+ ├─ [2] Hàng chờ người duyệt ngập                                            tầng: vận hành (con người)
+ │   └─ VÀ: 30/41 ticket tới trong phút 240–300  VÀ  1 người × 6 ca/giờ  VÀ  ca bị chuyển người tăng:
+ │        ├─ hàng vỡ/thất lạc luôn chuyển người (S4-07@11: DAMAGED → escalated)
+ │        └─ cổng vòng 1 chuyển người SAU khi đã hoàn tiền (S4-02@11 prepared: SỔ CÁI 22.000đ, result escalated)
+ │       bằng chứng: report prepared: chuyển người 0,5024, 10 ca ùn, chờ lâu nhất 128 phút
+ └─ [3] Tổng hoàn tự động vượt ngân sách ngày sale                         tầng: kinh doanh
+     └─ VÀ: Finance chốt riêng 300.000đ cho 11.11  VÀ  trần của bàn cố định 1.400.000đ, không theo ngân sách từng ngày
+         bằng chứng: world_patch.json ops_limits.daily_auto_refund_budget_vnd = 300000; report: 422.000đ > 300.000đ
 ```
 
 | Lá | Specification bị vi phạm (phần mềm phải làm gì) | Giả định môi trường đã sai (thế giới ngoài phần mềm) |
 |---|---|---|
-| [1] | | |
-| [2] | | |
-| [3] | | |
+| [1] | Mọi lệnh ghi tiền / lỗi hãng phải khớp quyền lợi và `fault_causes` tính từ tracking + chính sách hiệu lực, kể cả khi LLM không trả lời | "Nhà cung cấp LLM luôn trả lời; nếu lỗi thì hiếm và ngắn" (thực tế giờ sale 60% lần gọi bị 429) |
+| [2] | Không ca chuyển người nào chờ quá 60 phút; cổng không được chuyển người một ca đã ghi xong tiền | "Ticket tới đều trong ca; một người duyệt 6 ca/giờ là đủ" (thực tế gấp ba và dồn vào một giờ) |
+| [3] | Tổng hoàn tự động trong ngày ≤ ngân sách Finance của chính ngày đó | "Ngân sách hoàn tự động là con số cố định 2.000.000đ/ngày" (thực tế Finance chốt riêng 300.000đ cho ngày sale) |
 
 **Ví dụ mẫu một nhánh (bộ nền, đừng chép):** đỉnh "hãng VNX nhận lỗi oan cho đơn O-1002" ← [1] agent dùng độ trễ 5 ngày ←
 model lấy số trong ticket đè lên DB (`T-002@55`). Spec bị vi phạm: độ trễ dùng để ghi lỗi phải lấy từ tracking DB. Giả định
@@ -317,9 +326,10 @@ python3 -m lab10.grade --incident Sx
 
 | Nhánh fault tree | Nguyên nhân | Chỗ sửa (hàm + nhánh trong `guards.py`, hoặc khoá trong `operating_gates.json`) | Tầng (phát hiện / chặn / giới hạn thiệt hại / vận hành) | GIẢM khả năng hay NGĂN hẳn? Vì sao | Mã lần chạy sau khi sửa |
 |---|---|---|---|---|---|
-| [1] | | | | | |
-| [2] | | | | | |
-| [3] | | | | | |
+| [1] | Nhánh `fail_open` ghi lỗi hãng khi nguyên nhân là shop bàn giao muộn | `write_gate` nhánh `issue_refund` (vòng 1: so `entitlement_vnd`) + nhánh `file_carrier_fault`: không `carrier_at_fault` → `deny` (vòng 2, trước là `escalate`) | chặn | **NGĂN** nhánh ghi lỗi oan: cổng tính lại từ tracking + chính sách, không dựa vào LLM, nên LLM lỗi bao nhiêu cũng không ghi được lỗi sai. Còn hở nếu chính tracking ghi sai `delay_cause` | `R-S4-after-20261119-163830-8ae87d` |
+| [2] | Hàng chờ ngập giờ sale (1 người, ticket gấp ba, ca chuyển người dồn) | (a) bỏ `escalate` sau khi đã hoàn (như [1]); (b) `business.pilot_scope` → kho HN + HCM; giữ `operations.reviewers_on_shift = 1` (thử 2 người: hết ùn nhưng ROI 0,30 < 0,4 đã ký) | vận hành | **GIẢM**: hết ùn trên gói 11.11 (chờ lâu nhất 40 phút) nhưng nếu lượng ticket ở HN + HCM tăng hơn nữa vẫn có thể ùn; monitor `peak_hour_review_load` báo sớm | `R-S4-after-20261119-163939-bb79b2` |
+| [3] | Trần hoàn ngày của bàn cố định, không theo ngân sách ngày sale | `business.daily_refund_cap_vnd` 1.400.000 → 300.000 | giới hạn thiệt hại | **NGĂN** vượt ngân sách (khoản vượt trần không ghi, chuyển NV-HANH) với điều kiện con số trong config được cập nhật theo ngân sách Finance mỗi ngày sale; nếu Finance đổi số mà không ai sửa config thì chỉ còn là GIẢM | `R-S4-after-20261119-163839-8abc69` |
+| (theo dõi) | Không ai thấy LLM đang nghẽn và hàng chờ đang dồn | `monitors.py`: `fail_open_rate`, `peak_hour_review_load` | phát hiện | GIẢM (chỉ báo, không chặn) | `R-S4-after-20261119-164006-d1ada5` |
 
 ---
 
