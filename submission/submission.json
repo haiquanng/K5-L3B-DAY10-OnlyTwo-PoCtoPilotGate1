@@ -5,12 +5,12 @@
     "NguyenVanLen-2A202604007",
     "NguyenLuongNguyen-2A202604005"
   ],
-  "incident": "",
-  "decision_v1": "",
-  "decision_v2": "",
+  "incident": "S4",
+  "decision_v1": "Tiếp tục",
+  "decision_v2": "Thu hẹp",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Cổng của bàn tin hoàn toàn vào tracking: `delay_cause` (ví dụ `MERCHANT_HANDOVER` ở 10 đơn của thẻ S4) và `delivered_date` do điểm phát, shop và hãng ghi là đúng và kịp thời. Ngày sale, quét sót hoặc ghi bù tay thì cổng sẽ chặn sai hoặc cho qua sai mà không biết.",
+    "reduce_or_prevent": "NGĂN được lỗi hãng oan và hoàn sai (27 → 0 lỗi, 160.000đ → 0đ trên gói 11.11) vì cổng tính lại từ tracking và chính sách, không dựa vào LLM nên LLM lỗi 60% vẫn không ghi sai được. Hàng chờ chỉ GIẢM (10 → 0 ca ùn, chờ 128 → 40 phút) nhờ thu hẹp còn HN + HCM; lượng ticket tăng hơn nữa vẫn có thể ùn.",
+    "measure_in_pilot": "(a) tỉ lệ LLM trả 429 thật giờ cao điểm (mock 60%) và `fail_open_rate`; (b) số phút thật NV-HANH cần cho một ca vỡ hàng/thất lạc (mock 10 phút/ca, 6 ca/giờ) và phân bố giờ tới ngày sale ở HN + HCM; (c) đối soát tuần của NV-OANH: tổng hoàn tự động so với ngân sách Finance từng ngày và số lỗi hãng bị khiếu nại."
   }
 }
