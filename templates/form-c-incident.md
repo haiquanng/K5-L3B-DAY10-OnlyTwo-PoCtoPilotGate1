@@ -260,9 +260,9 @@ Kiểm bằng gì (hàm trong `guards.py`, dòng report nào): (a) `write_gate` 
 
 ### Câu 3.3 · Một giả định về môi trường mà người thiết kế đã ngầm tin, nhưng nhiều khả năng sai ngoài thực tế
 
-Giả định (thứ nằm NGOÀI phần mềm): …
+Giả định (thứ nằm NGOÀI phần mềm): **Khi trợ lý thu hẹp phạm vi hoặc chuyển ca cho người, ở phía sau luôn có đủ người CSKH làm tay để nhận phần bị cắt, và họ xử lý kịp trong cùng hạn 60 phút như ngày thường.** Quyết định v2 (cắt kho DN, CT về làm tay; khoản vượt trần 300.000đ chuyển NV-HANH) chỉ an toàn nếu giả định này đúng.
 
-Vì sao có thể sai: …
+Vì sao có thể sai: Đêm sale là lúc CSKH làm tay cũng đông nhất: trên gói S4, kho DN và CT có 18/41 ticket (10 + 8) và dồn vào cùng khung 20h–21h30 với HN + HCM. Report chỉ đo hàng chờ của người duyệt pilot (NV-HANH), **không đo hàng chờ của CSKH làm tay**, nên "0 ca ùn" của mốc after có thể chỉ là dời chỗ ùn sang đội khác. Mỗi ticket làm tay tốn 10.000đ công (`ops_facts.manual_cost_per_ticket_vnd`) mà ROI của bàn không tính phần này.
 
 ---
 
@@ -356,23 +356,32 @@ Thẻ S5 dùng mục này cho một con số kinh doanh: chi phí mỗi ticket t
 
 <a id="c9"></a>
 
-## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `__________`)
+## C9 · Câu 3.7 · Fault tree SAU khi sửa (mã lần chạy: `R-S4-after-20261119-164007-d1ada5`, grade `R-S4-grade-20261119-164007-d1ada5`)
 
 Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [gate … hỏng]` và ghi:
 
 ```
-[ĐỈNH] ______________________________
+[ĐỈNH] Tác hại đêm 11.11: khách chờ duyệt quá 60 phút, hãng bị ghi lỗi oan, hoàn tự động vượt ngân sách ngày sale
+       after (HN + HCM): 0 ca ùn, chờ lâu nhất 40 phút · 0 lỗi oan, hoàn sai 0đ · tổng hoàn 292.000đ ≤ 300.000đ
  └─ HOẶC
- ├─ [1] ______________ VÀ [gate ______ hỏng]
- ├─ [2] ______________ VÀ [gate ______ hỏng]
- └─ [3] ______________ (còn hở?)
+ ├─ [1] LLM nghẽn → fail_open ghi tiền / ghi lỗi hãng
+ │      VÀ [gate write_gate hỏng: issue_refund so entitlement_vnd, file_carrier_fault so carrier_at_fault → deny]
+ │      VÀ [legal.carrier_fault_requires_recorded_cause = true hỏng]        (hai lớp chặn độc lập)
+ │      còn hở: tracking ghi sai delay_cause / delivered_date (cổng tin tracking)
+ ├─ [2] Hàng chờ người duyệt ngập giờ sale
+ │      VÀ [gate pilot_scope = HN + HCM hỏng (lượng ticket ở 2 kho vượt sức 6 ca/giờ)]
+ │      VÀ [monitor peak_hour_review_load không được ai đọc / runbook không chạy]
+ │      còn hở: ca bị cắt (DN, CT) dồn sang CSKH làm tay, không được đo (câu 3.3)
+ └─ [3] Tổng hoàn tự động vượt ngân sách ngày sale
+        VÀ [gate daily_refund_cap_vnd = 300.000 hỏng: không ai cập nhật khi Finance đổi số]
+        còn hở: trần là số cứng trong config, không đọc ngân sách Finance của từng ngày
 ```
 
 | Nhánh | Gate (hàm trong `guards.py` / khoá config / metric trong `monitors.py`) | Tầng gate (phát hiện / chặn / giới hạn thiệt hại / vận hành) | Giảm hay ngăn? Vì sao | Nhánh còn hở |
 |---|---|---|---|---|
-| [1] | | | | |
-| [2] | | | | |
-| [3] | | | | |
+| [1] | `write_gate` nhánh `issue_refund` (so `entitlement_vnd`) và `file_carrier_fault` (không `carrier_at_fault` → `deny`); `legal.carrier_fault_requires_recorded_cause = true` (vòng 1); monitor `fail_open_rate` | chặn (+ phát hiện) | **NGĂN**: cổng tính lại từ tracking và chính sách, không dựa vào LLM; LLM lỗi 60% vẫn 0 lỗi oan và hoàn sai 0đ (base S4: 27 lỗi oan, 160.000đ hoàn sai) | Tracking ghi sai nguyên nhân hoặc ngày giao (ngày sale quét sót, ghi bù tay) |
+| [2] | `business.pilot_scope = warehouse [HN, HCM]`; giữ `reviewers_on_shift = 1`; monitor `peak_hour_review_load`; runbook B7.6 [S4] | vận hành (+ phát hiện) | **GIẢM**: 10 ca ùn → 0, chờ 128 → 40 phút trên gói 11.11; ticket ở 2 kho còn lại tăng thêm thì vẫn ùn. Monitor chỉ báo, không chặn | Hàng chờ CSKH làm tay (DN, CT) không được đo; người duyệt nghỉ hoặc chậm hơn 10 phút/ca |
+| [3] | `business.daily_refund_cap_vnd` 1.400.000 → 300.000 (host chặn, phần vượt chuyển NV-HANH) | giới hạn thiệt hại | **NGĂN** khi con số đúng (422.000đ → 292.000đ); thành **GIẢM** nếu Finance đổi ngân sách mà không ai sửa config | Trần cố định, không đọc ngân sách từng ngày; khoản vượt dồn sang NV-HANH |
 
 ---
 
@@ -382,7 +391,9 @@ Vẽ lại cây ở C6. Ở mỗi nhánh đã xử lý, thêm một nút `VÀ [g
 
 | Rủi ro | Khả năng | Tác động | Người phụ trách (PIC, một người) | Dấu hiệu (metric nào, ngưỡng nào) | Xử lý | Ảnh hưởng bước đánh giá | Nhóm chức năng (GOVERN / MAP / MEASURE / MANAGE) |
 |---|---|---|---|---|---|---|---|
-| | | | | | | | |
+| Ngày sale ở HN + HCM đông hơn gói thử: hàng chờ người duyệt ùn lại dù đã thu hẹp | Trung bình ("mai còn một đợt sale", sale lặp lại hằng tháng) | Cao: vi phạm `queue_stuck_max = 0` đã ký; khách hàng vỡ chờ quá 60 phút | NV-TUNG | `peak_hour_review_load` > 6 ca/giờ (đỏ, C8); report "ca bị ùn" ≥ 1 | Trước 20h ngày sale: thu hẹp tiếp bằng `pilot_scope.mode = percent`; gọi CSKH làm tay hỗ trợ tạm | Xảy ra trong pilot thì v2 Thu hẹp chuyển thành **Cải tiến thêm**; chưa mở lại DN, CT | MANAGE |
+| LLM nghẽn kéo dài cả ngày sale: nhiều ticket rơi `fail_open`, cổng chặn ghi tiền nên ticket dồn sang người | Trung bình (mock: 60% lần `policy_check` bị 429 giờ cao điểm) | Trung bình: không mất tiền (cổng ngăn) nhưng tỉ lệ chuyển người tăng (0,3565 > 0,25 đã ký), ROI giảm | Nguyễn Văn Lên | `fail_open_rate` ≥ 10% (đỏ, C8) | Báo `#logix-refund-pilot-alert`; NV-TUNG thu hẹp phạm vi tới khi LLM hồi; đo tỉ lệ 429 thật trong pilot | Bước đánh giá 2 phải có số 429 thật và `fail_open_rate` thật | MEASURE |
+| Phần bị cắt (DN, CT) và khoản vượt trần dồn sang CSKH làm tay mà không ai đo (câu 3.3) | Cao (giờ sale CSKH cũng đông nhất) | Trung bình: khách DN, CT chờ lâu; ROI thật thấp hơn report | Nguyễn Lương Nguyên | Report "độ phủ" (0,561) và "… ngoài phạm vi" ticket/ngày; cần thêm số ca chờ của CSKH làm tay | Thêm số ca làm tay vào báo cáo ngày; NV-HANH báo kênh khi CSKH chờ > 60 phút | Không mở rộng phạm vi ở Bước đánh giá 2 khi chưa có số này | MAP |
 
 Quy tắc: **mỗi dòng phải đổi được một quyết định.** Cột "Dấu hiệu" phải là một metric có trong `monitors.py` hoặc trong report.
 
@@ -398,26 +409,31 @@ Ghi các dòng đổi sau sự cố. Mỗi dòng vẫn phải có một PIC có 
 
 | # nhóm | Trạng thái mới (Xong / Chưa / Không áp dụng) | Bằng chứng mới (mã lần chạy, mục phiếu, số trong report) | PIC |
 |---|---|---|---|
-| | | | |
-| | | | |
+| 1 Chất lượng | **Xong** (ở phạm vi HN + HCM) | `R-S4-after-20261119-164007-d1ada5`: `pass_rate` 1,0, `pass_k` 1,0, hoàn sai 0đ, lỗi oan 0, lộ PII 0; bộ nền `R-base-after-20261119-164006-d1ada5` 1,0, không ca mới hỏng (grade `regression ✅`) | Nguyễn Văn Lên |
+| 4 Quyền hạn | **Xong** | `write_gate` chặn `issue_refund` (so `entitlement_vnd`) và `file_carrier_fault` (`deny` khi không `carrier_at_fault`); C7 dòng [1] | Nguyễn Văn Lên |
+| 5 Hiệu năng, hạ tầng | **Chưa** (đã có chỉ số phát hiện, chưa có số thật) | LLM lỗi 60% ở `policy_check` (S4); `fail_open_rate` 0,2435; cổng ngăn ghi sai nhưng tỉ lệ chuyển người 0,3565 > 0,25; cần số 429 thật | Nguyễn Văn Lên |
+| 6 Chi phí | **Xong** (ở phạm vi HN + HCM) | Chi phí 5.747đ ≤ 7.000đ, ROI 0,74 ≥ 0,4, tổng hoàn 292.000đ ≤ 300.000đ (`R-S4-after-20261119-164007-d1ada5`); đủ 4 kho + 2 người: 7.584đ, ROI 0,32 (không đạt) | Nguyễn Văn Hải Quân |
+| 7 Vận hành | **Xong** | 0 ca ùn, chờ lâu nhất 40 phút; monitor `fail_open_rate`, `peak_hour_review_load` (C8, `monitor ✅`); runbook B7.6 [S4], Runbook 4–5 (C11) | Nguyễn Lương Nguyên |
+| 8 Con người, pháp lý | **Xong** | Lỗi hãng oan 0 (base S4: 27), lộ PII 0; `legal.carrier_fault_requires_recorded_cause = true`; `pii_fields_blocked_to_third_party` chặn `recipient_contact`, `customer_note` | Nguyễn Lương Nguyên |
+| 9 Quyết định | **Xong** | v2 **Thu hẹp** (C12), khớp dòng "Thu hẹp" của `decision_rule` đã ký; tiêu chí hash `fc78754e`, chốt vòng 1 `f4c270e2` | Nguyễn Văn Hải Quân |
 
 ### Runbook 4 · Sau sự cố trên thẻ (vòng 2)
 
 | Câu hỏi | Trả lời |
 |---|---|
-| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | |
-| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | |
-| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | |
-| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | |
-| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | |
-| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | |
-| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | |
+| Tín hiệu nào ở Runbook 2 (Phiếu B mục B7.5) lẽ ra phải báo trước sự cố này? Nó đã có chưa? | "Thời gian chờ lâu nhất" và "số ca bị ùn" **đã có** nhưng chỉ sáng khi đã ùn. **Chưa có** tín hiệu báo trước: tải hàng chờ theo giờ và tỉ lệ LLM lỗi. "Tổng hoàn tự động so với trần" đã có nhưng trần (1.400.000đ) sai cho ngày sale |
+| Bàn thêm hoặc đổi ngưỡng nào, từ bao nhiêu thành bao nhiêu? | `daily_refund_cap_vnd` 1.400.000 → **300.000**; thêm `peak_hour_review_load`: vàng > 4, đỏ > 6 ca/giờ/người; thêm `fail_open_rate`: vàng > 0, đỏ ≥ 10% |
+| Bàn đổi gì về **người** (số người trực, ai đứng tên, ai được gọi)? | **Giữ 1 người trực** (NV-HANH): người thứ hai làm ROI 0,32 < 0,4 và chi phí 7.584đ > 7.000đ. Ngày sale NV-TUNG gọi CSKH làm tay hỗ trợ tạm khi hàng chờ ≥ 4 ca. Người đứng tên giữ nguyên (PIC NV-TUNG, duyệt NV-HANH) |
+| Bàn đổi gì về **phạm vi** hoặc **quy trình** (kiểm mẫu, ghi chú giải thích, trần)? | `pilot_scope` tất cả → **HN + HCM** (độ phủ 0,561); cổng ghi lỗi hãng `escalate` → `deny` để không đẩy ca đã hoàn sang người; giữ kiểm mẫu 10% và ghi chú giải thích; trần ngày 300.000đ |
+| Nói gì với bên thứ ba bị ảnh hưởng (hãng, shop, người nhận, nhân viên duyệt), ai nói, trong bao lâu? | **Hãng** (VNX, GHSH, MKD…): NV-OANH gửi danh sách lỗi ghi oan ở base (27 lỗi, phần lớn đơn `MERCHANT_HANDOVER`) để huỷ, trong 24 giờ. **Shop** có đơn bàn giao muộn: NV-OANH đối soát phí ship LOGIX đã trả, trong tuần. **Khách** có ca chờ quá 60 phút: NV-HANH nhắn xin lỗi và hẹn giờ xử lý, trong ca. **Nhân viên duyệt**: NV-TUNG báo lịch thu hẹp ngày sale trước 20h |
+| Dữ liệu cá nhân nào đã rời hệ thống mà không thu hồi được? Báo cho ai? | Không có: lộ PII = 0 ở cả ba mốc; `legal.pii_fields_blocked_to_third_party` đã chặn `recipient_contact`, `customer_note` từ vòng 1 |
+| Sự cố lộ ra trước qua số máy đo, phản hồi của người, hay đọc nội dung? Nguồn nào bàn chưa có? | Qua **phản hồi của người** (tin nhắn NV-TUNG lúc 23:40, NV-OANH báo vượt 300.000đ), không qua máy đo. Chưa có lúc đó: tải hàng chờ theo giờ và tỉ lệ LLM lỗi (nay đã thêm); vẫn chưa có: hàng chờ CSKH làm tay |
 
 ### Runbook 5 · Ba kịch bản "nếu … thì …" cho tuần đầu chạy thử thật
 
-1. Nếu số ticket tăng gấp ___ lần trong một giờ thì: …
-2. Nếu nhà cung cấp LLM lỗi quá ___ phút thì: …
-3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: …
+1. Nếu số ticket tăng gấp **3** lần trong một giờ thì: `peak_hour_review_load` vượt 6 ca/giờ → NV-TUNG thu hẹp tiếp `pilot_scope` (percent 50 trong HN + HCM) trong 15 phút; NV-HANH báo kênh; CSKH làm tay nhận phần bị cắt. Ngày sale biết trước thì thu hẹp trước 20h.
+2. Nếu nhà cung cấp LLM lỗi quá **15** phút thì (`fail_open_rate` ≥ 10% liên tục 15 phút): cổng vẫn chặn ghi sai; NV-TUNG thu hẹp phạm vi để ticket không dồn sang NV-HANH; Lên báo nhà cung cấp; chỉ mở lại khi `fail_open_rate` về 0 trong 30 phút.
+3. Nếu người duyệt báo không tin một quyết định của trợ lý thì: NV-HANH ghi `ticket@seed` kèm ghi chú giải thích vào kênh; tăng `review_sampling_pct` 10% → 20% trong ngày; nếu quyết định sai thật (hoàn sai, lỗi oan) thì áp điều kiện dừng ở Runbook 3 (NV-TUNG tắt thao tác ghi liên quan).
 
 ---
 
