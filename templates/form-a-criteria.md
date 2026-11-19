@@ -52,12 +52,12 @@ trợ lý có đang gây thiệt hại cho bên ngoài LogiX không; không có 
 
 | | Offline, cho MỘT bước (câu 1.3) | Telemetry production (câu 1.4) |
 |---|---|---|
-| **Bước / hành vi được đo** | | |
-| **Thước đo** (một câu, có đơn vị) | | |
-| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | | |
+| **Bước / hành vi được đo** | Chọn độ trễ giao hàng để tính số tiền hoàn. | |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB, tính bằng phần trăm (%). | |
+| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | Lấy `proposal.delay_days_used` và `tracking.db_delay_days` từ trace trong `runs/<mã lần chạy>/traces/` trên bộ nền 22 ticket × 5 seed. Nhãn sai do code tự động xác định: hai giá trị độ trễ không bằng nhau. Bàn không cần gán nhãn thủ công. | |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | `Tỉ lệ sai độ trễ = số lần proposal có delay_days_used khác db_delay_days / tổng số lần chạy có sự kiện proposal`. Ca không đi tới bước `proposal` bị loại khỏi mẫu số và được đếm riêng trong báo cáo luồng hỏng. | |
 | **Khung thời gian / ngưỡng báo động** | (không áp dụng) | |
-| **Điểm mù** (thước đo này KHÔNG thấy gì) | | |
+| **Điểm mù** (thước đo này KHÔNG thấy gì) | Không phát hiện lỗi ở chính sách, phê duyệt, số tiền bồi thường hoặc tracking DB thực tế; chỉ thấy sự khác biệt giữa độ trễ agent dùng và độ trễ trong DB. | |
 
 **Ví dụ mẫu (bước "chọn độ trễ" của agent, đừng chép):**
 Thước đo: tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB. Dữ liệu: sự kiện `proposal.delay_days_used`
