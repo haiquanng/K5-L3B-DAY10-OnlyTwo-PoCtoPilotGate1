@@ -19,7 +19,34 @@ def escalation_rate(trials):
     return sum(t["status"] == "escalated" for t in trials) / max(1, len(trials))
 
 
+def fail_open_rate(trials):
+    """Kỹ thuật (thẻ S4): tỉ lệ ticket mà trợ lý rơi vào nhánh fail_open vì LLM lỗi (429) ở bước kiểm chính sách.
+    Không cần nhãn: đọc sự kiện llm_fallback trong trace. Ngày thường ~0; giờ nhà cung cấp LLM nghẽn thì vọt lên."""
+    hit = sum(any(e.get("type") == "llm_fallback" and e.get("mode") == "fail_open" for e in t["events"]) for t in trials)
+    return round(hit / max(1, len(trials)), 4)
+
+
+def peak_hour_review_load(trials):
+    """Vận hành (thẻ S4): số ca vào hàng chờ người duyệt trong 60 phút đông nhất của một ngày (lấy ngày/seed tệ nhất).
+    So với sức duyệt: 1 người = 6 ca/giờ (ops_facts). Vượt sức duyệt là dấu hiệu sắp có ca bị ùn."""
+    worst = 0
+    days = {}
+    for t in trials:
+        if t.get("review_kind"):
+            days.setdefault((t.get("seed"), t.get("day")), []).append(t.get("arrive_min") or 0)
+    for mins in days.values():
+        mins.sort()
+        j = 0
+        for i, m in enumerate(mins):
+            while mins[j] < m - 59:
+                j += 1
+            worst = max(worst, i - j + 1)
+    return worst
+
+
 MONITORS = {
     "escalation_rate": escalation_rate,     # có sẵn; KHÔNG tính là metric mới của đội
+    "fail_open_rate": fail_open_rate,
+    "peak_hour_review_load": peak_hour_review_load,
 }
 STARTER_MONITORS = ("escalation_rate",)

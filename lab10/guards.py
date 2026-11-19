@@ -69,9 +69,14 @@ def write_gate(ctx, action):
         return Verdict.escalate("không xác minh được kiện hàng của lỗi hãng; chuyển người duyệt")
 
     delay = H.db_delay_days(parcel, ctx.as_of)
-    if (action.get("delay_days") != delay
-            or action.get("carrier_id") != parcel.get("carrier_id")
-            or not H.carrier_at_fault(policy, parcel, delay)):
+    # Vòng 2 (S4): tới bước này khoản hoàn ĐÃ được ghi đúng theo tracking. Nếu tracking cho thấy hãng không có lỗi
+    # (vd. MERCHANT_HANDOVER, nhánh fail_open khi LLM lỗi) thì chỉ BỎ lệnh ghi lỗi hãng (deny), không chuyển cả ticket
+    # sang người: chuyển người lúc này làm sổ cái (đã hoàn) và trạng thái (chờ duyệt) mâu thuẫn, và làm ngập hàng chờ.
+    if not H.carrier_at_fault(policy, parcel, delay):
+        ctx.log("fault_denied_not_carrier", order_id=order["order_id"], parcel_id=parcel["parcel_id"],
+                tracking_delay_days=delay, tracking_cause=parcel.get("delay_cause"))
+        return Verdict.deny("tracking không cho thấy lỗi thuộc hãng; không ghi lỗi hãng")
+    if action.get("delay_days") != delay or action.get("carrier_id") != parcel.get("carrier_id"):
         ctx.log("fault_mismatch", order_id=order["order_id"], parcel_id=parcel["parcel_id"],
                 tracking_delay_days=delay, requested_delay_days=action.get("delay_days"),
                 tracking_cause=parcel.get("delay_cause"))
