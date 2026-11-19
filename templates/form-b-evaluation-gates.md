@@ -281,17 +281,16 @@ python3 -m unittest discover -s tests
 
 | # | Cổng (hàm và nhánh, ví dụ `write_gate` khi `tool == "issue_refund"`) | Ứng với dòng nào ở B6 / B4 | Chặn điều gì, dựa vào nguồn sự thật nào | Mã lần chạy `base · after` | Ca đang đúng nào bị hỏng? (phải là "không") |
 |---|---|---|---|---|---|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
+| 1 | `pre_guard` ghim policy hiệu lực; `write_gate` khi `tool == "issue_refund"` tính lại quyền lợi, kiểm số tiền và bên trả | B4 · ví dụ `issue_refund`; B2 lỗi 1 (số ngày khách tự khai bị tin nhầm) | Chặn dùng policy sai ngày hiệu lực hoặc hoàn sai số tiền; dựa vào policy theo ngày và độ trễ tracking | `R-base-after-20261119-161327-6559ea` | Không (110/110 lượt đúng, không có ca hỏng) |
+| 2 | `write_gate` khi `tool == "file_carrier_fault"`: xác minh kiện, số ngày, hãng và nguyên nhân | B4 · `carrier_id`, `parcel_id` — WRONG; quyết định `do_fault` — INCAPABLE | Chặn lỗi hãng không khớp tracking hoặc nguyên nhân không thuộc `fault_causes`; dựa vào parcel trong đơn và policy hiệu lực | `R-base-after-20261119-161327-6559ea` | Không (110/110 lượt đúng, không có ca hỏng) |
 
 ### B7.2 · Câu 2.7 · Hai bước tránh rò rỉ dữ liệu
 
 Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bước cụ thể để không "chỉnh trên chính bộ dùng để chấm"
 (gắn với bộ nền, gói sự cố, bài kiểm tra ẩn):
 
-1. …
-2. …
+1. Khi sửa, kiểm bằng `tests` và ticket `--adhoc` tự viết với cách diễn đạt/số ngày khác nhau; chạy lại `base` để bảo đảm đủ 22 ticket vẫn đúng. Viết guard theo nguồn sự thật (`tracking`, `policies`), không hard-code mã ticket, seed, câu chữ hay nhãn của bộ nền.
+2. Giữ gói sự cố `Sx` làm dữ liệu kiểm định: chốt/commit ứng viên rồi mới chạy `python3 -m lab10.grade --incident Sx`; không chép ticket, nhãn hoặc trace của gói này thành luật riêng. Không xem hay đưa dữ liệu bài kiểm tra ẩn vào code/test; nếu `Sx` phát hiện lỗi, sửa quy tắc tổng quát rồi kiểm bằng `--adhoc` mới và bộ nền, để bài ẩn còn là holdout cho người chấm.
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 

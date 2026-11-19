@@ -29,14 +29,51 @@ lab10.helpers: db_delay_days, ticket_parcel, effective_policy, entitlement_vnd, 
 
 Mặc định dưới đây cho qua tất cả (= mốc base).
 """
-from . import helpers as H  # noqa: F401
+from . import helpers as H
 from .tools import Verdict
 
 
 def pre_guard(ctx):
-    return Verdict.allow()
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    if policy is None:
+        ctx.log("no_effective_policy", as_of=ctx.as_of)
+        return Verdict.escalate("không tìm thấy chính sách có hiệu lực; chuyển người duyệt")
+    return Verdict.allow(policy_id=policy["policy_id"])
 
 
 def write_gate(ctx, action):
-    # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
+    tool = action.get("tool")
+    if tool not in ("issue_refund", "file_carrier_fault"):
+        return Verdict.allow()
+
+    policy = H.effective_policy(ctx.tools.lookup_policies(), ctx.as_of)
+    order = ctx.tools.lookup_order(action.get("order_id"))
+    if policy is None or order is None:
+        ctx.log("write_missing_source_data", tool=tool, order_id=action.get("order_id"))
+        return Verdict.escalate("thiếu đơn hàng hoặc chính sách hiệu lực để xác minh lệnh ghi")
+
+    if tool == "issue_refund":
+        parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+        delay = H.db_delay_days(parcel, ctx.as_of)
+        expected = H.entitlement_vnd(policy, order, delay, parcel.get("delay_cause"))
+        if action.get("amount_vnd") != expected or action.get("payer", "LOGIX") != "LOGIX":
+            ctx.log("refund_mismatch", order_id=order["order_id"], delay_days=delay,
+                    expected_amount_vnd=expected, requested_amount_vnd=action.get("amount_vnd"),
+                    payer=action.get("payer", "LOGIX"))
+            return Verdict.escalate("số tiền hoặc bên trả không khớp tracking và chính sách; chuyển người duyệt")
+        return Verdict.allow()
+
+    parcel = next((p for p in order["parcels"] if p["parcel_id"] == action.get("parcel_id")), None)
+    if parcel is None:
+        ctx.log("fault_unknown_parcel", order_id=order["order_id"], parcel_id=action.get("parcel_id"))
+        return Verdict.escalate("không xác minh được kiện hàng của lỗi hãng; chuyển người duyệt")
+
+    delay = H.db_delay_days(parcel, ctx.as_of)
+    if (action.get("delay_days") != delay
+            or action.get("carrier_id") != parcel.get("carrier_id")
+            or not H.carrier_at_fault(policy, parcel, delay)):
+        ctx.log("fault_mismatch", order_id=order["order_id"], parcel_id=parcel["parcel_id"],
+                tracking_delay_days=delay, requested_delay_days=action.get("delay_days"),
+                tracking_cause=parcel.get("delay_cause"))
+        return Verdict.escalate("lỗi hãng không khớp số ngày và nguyên nhân trong tracking; chuyển người duyệt")
     return Verdict.allow()

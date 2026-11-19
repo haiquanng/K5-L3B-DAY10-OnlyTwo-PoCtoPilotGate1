@@ -34,6 +34,14 @@ class TestBase(unittest.TestCase):
         after = set(summarize(self.run_with("lab10.guards"))["failed"])
         self.assertFalse(sorted(after - before))
 
+    def test_guard_blocks_refund_from_unverified_delay_claim(self):
+        ticket = next(t for t in self.tickets if t["ticket_id"] == "T-002")
+        trials = run_suite(self.world, [ticket], importlib.import_module("lab10.guards"), {})
+        target = next(t for t in trials if t["seed"] == 55)
+        self.assertEqual(target["status"], "escalated")
+        self.assertEqual(target["paid_vnd"], 0)
+        self.assertEqual(target["fault_rows"], [])
+
     def test_deterministic(self):
         a = [(t["ticket_id"], t["seed"], t["status"], t["paid_vnd"]) for t in self.run_with("lab10._noop_guards")]
         b = [(t["ticket_id"], t["seed"], t["status"], t["paid_vnd"]) for t in self.run_with("lab10._noop_guards")]
