@@ -7,18 +7,26 @@
     "roi_min": 0.4
   },
   "operations": {
-    "pic": "",
-    "approver_id": "",
+    "pic": "NV-TUNG",
+    "approver_id": "NV-HANH",
     "reviewers_on_shift": 1,
-    "review_capacity_per_hour": null,
-    "max_queue_wait_minutes": null,
-    "stop_conditions": [],
-    "alert_channel": "",
-    "decision_note": false,
-    "review_sampling_pct": 0
+    "review_capacity_per_hour": 6,
+    "max_queue_wait_minutes": 60,
+    "stop_conditions": [
+      "Khi có 1 lỗi ghi cho hãng mà delay_cause trong tracking DB không thuộc fault_causes, hoặc 1 khiếu nại của hãng về lỗi do trợ lý ghi, thì NV-TUNG tắt ngay file_carrier_fault và notify_carrier; NV-HANH duyệt tay các lỗi hãng còn lại trong ngày",
+      "Khi có 1 khoản hoàn sai (sai số tiền, sai khách, hoặc dùng phê duyệt không hợp lệ) thì NV-TUNG tắt ngay issue_refund và chuyển toàn bộ ticket về làm tay",
+      "Khi có 1 lần dữ liệu cá nhân của người nhận (tên, số điện thoại, địa chỉ) rời hệ thống sang hãng thì NV-TUNG tắt ngay notify_carrier",
+      "Khi một hãng đã bị ghi tự động 2 lỗi trong ngày thì mọi lỗi tiếp theo của hãng đó chuyển NV-HANH duyệt",
+      "Khi tổng hoàn tự động trong ngày chạm trần 1.400.000đ thì mọi khoản hoàn tiếp theo chuyển NV-HANH duyệt",
+      "Khi hàng chờ người duyệt có ca chờ quá 60 phút, hoặc hơn 6 ca chuyển sang trong một giờ, thì NV-TUNG thu hẹp phạm vi pilot (Quân đổi business.pilot_scope) cho tới khi hàng chờ về 0",
+      "Khi LLM lỗi (RateLimitError) và trợ lý rơi vào nhánh fail_open thì không ghi tiền, không ghi lỗi hãng; chuyển người duyệt"
+    ],
+    "alert_channel": "#logix-refund-pilot-alert",
+    "decision_note": true,
+    "review_sampling_pct": 10
   },
   "legal": {
-    "pii_fields_blocked_to_third_party": [],
-    "carrier_fault_requires_recorded_cause": false
+    "pii_fields_blocked_to_third_party": ["recipient_contact", "customer_note"],
+    "carrier_fault_requires_recorded_cause": true
   }
 }
