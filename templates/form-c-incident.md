@@ -342,14 +342,14 @@ Thẻ S5 dùng mục này cho một con số kinh doanh: chi phí mỗi ticket t
 
 | | Chỉ số theo dõi mới của bàn |
 |---|---|
-| **Tên trong `MONITORS`** | |
-| **Bước / hành vi được đo** | |
-| **Thước đo** (một câu, có đơn vị) | |
-| **Dữ liệu** (trường nào của trial, không có nhãn) | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | |
-| **Khung thời gian / ngưỡng báo động** | |
-| **Điểm mù** (chỉ số này KHÔNG thấy gì) | |
-| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | |
+| **Tên trong `MONITORS`** | `fail_open_rate` (chính) · kèm `peak_hour_review_load` (vận hành) |
+| **Bước / hành vi được đo** | Bước kiểm chính sách (`policy_check`): trợ lý có phải chạy nhánh dự phòng `fail_open` vì LLM không trả lời không · kèm: lượng ca đổ vào hàng chờ người duyệt trong giờ đông nhất |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ (%) ticket trong ngày có sự kiện `llm_fallback` với `mode = fail_open` · kèm: số ca vào hàng chờ trong 60 phút đông nhất (ca/giờ), so với sức duyệt 6 ca/giờ/người |
+| **Dữ liệu** (trường nào của trial, không có nhãn) | `trial["events"]` (sự kiện `llm_fallback`) · kèm: `review_kind`, `arrive_min`, `seed`, `day`. Không cần nhãn đúng/sai, đọc được ở production |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | Số ticket có ≥ 1 sự kiện `llm_fallback/fail_open` chia cho tổng số ticket (mẫu số tối thiểu 1; ticket không tới bước kiểm chính sách vẫn ở mẫu số) · kèm: với mỗi (seed, day), cửa sổ trượt 60 phút trên `arrive_min` của các ca có `review_kind`, lấy số ca lớn nhất; trả về ngày tệ nhất; `arrive_min` thiếu thì coi là 0 |
+| **Khung thời gian / ngưỡng báo động** | Tính lại mỗi 15 phút trên cửa sổ 60 phút. `fail_open_rate`: **vàng > 0** (LLM bắt đầu nghẽn, báo `#logix-refund-pilot-alert`), **đỏ ≥ 10%** → NV-TUNG thu hẹp phạm vi. `peak_hour_review_load`: **vàng > 4 ca/giờ** (B7.6 gọi thêm người), **đỏ > 6 ca/giờ × số người trực** → thu hẹp phạm vi hoặc gọi người dự phòng |
+| **Điểm mù** (chỉ số này KHÔNG thấy gì) | Không biết lệnh ghi trong nhánh `fail_open` đúng hay sai (cổng mới biết); không thấy LLM trả lời sai mà không báo lỗi; `peak_hour_review_load` không thấy ca bị ùn vì người duyệt nghỉ hay xử lý chậm hơn 10 phút/ca |
+| Giá trị trên bộ nền · trên thẻ (đọc mục `monitor` của report) | Grade `R-S4-grade-20261119-164007-d1ada5`: `fail_open_rate` bộ nền 0,0 · thẻ 0,1854 (base) / 0,2435 (after); `peak_hour_review_load` bộ nền 1 · thẻ 14 (base) / 10 (after). Ô `6 monitor ✅` |
 
 ---
 
@@ -430,30 +430,30 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 
 | | **v2** (phút 185–200, SAU sự cố) |
 |---|---|
-| Commit ký tiêu chí | phải giống v1 |
-| Hash chốt cổng vòng 1 | phải giống v1 |
-| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: ________ · prepared: ________ · after: ________ |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
-| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
-| Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
-| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | |
-| Bằng chứng 2 | |
-| Bằng chứng 3 | |
-| Khớp dòng nào trong `decision_rule` đã ký? | |
-| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | |
-| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | |
-| Nếu Dừng: bài học ghi lại | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Commit ký tiêu chí | `bd34e9e` (tiêu chí hash `fc78754e`), giống v1 |
+| Hash chốt cổng vòng 1 | `f4c270e2` (commit `aec5d81`), giống v1 |
+| Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: `R-S4-before-20261119-164007-d1ada5` · prepared: `R-S4-prepared-20261119-164007-d1ada5` · after: `R-S4-after-20261119-164007-d1ada5` (grade `R-S4-grade-20261119-164007-d1ada5`, PASS-VISIBLE) |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Không, ở phạm vi đã thu hẹp (HN + HCM): 0 ca ùn, chờ lâu nhất 40 phút, chi phí 5.747đ, ROI 0,74, tổng hoàn 292.000đ ≤ 300.000đ. Ở phạm vi đủ 4 kho thì vẫn vượt: 8 ca ùn, chờ 106 phút (`R-S4-after-20261119-163839-8abc69`) |
+| Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Khối "theo kho và hãng" trong output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | Kho **HN**: chi phí 5.337đ/ticket (HCM 3.468đ), pass 1,0, vẫn dưới trần 7.000đ; mọi hãng pass 1,0. Ở base, VNX chịu nhiều lỗi oan nhất (đơn `MERCHANT_HANDOVER` của VNX). Quyết định không đổi |
+| Quyết định (khoanh một) | Tiếp tục · **Thu hẹp** · Cải tiến thêm · Dừng |
+| Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | `R-S4-after-20261119-164007-d1ada5`: pass_rate 1,0 [1,0; 1,0], pass_k 1,0, hoàn sai 0đ, lỗi hãng oan 0, lộ dữ liệu 0 — 5/5 ngưỡng bắt buộc ĐẠT (prepared: pass_k 0,7805 CHƯA) |
+| Bằng chứng 2 | Ở đủ 4 kho, 1 người trực: 8 ca ùn, chờ 106 phút → `queue_stuck` 8 > 0 đã ký (`R-S4-after-20261119-163839-8abc69`). Thêm 1 người: hết ùn nhưng chi phí 7.584đ > 7.000đ và ROI 0,32 < 0,4 đã ký. Không có cách giữ đủ 4 kho mà đạt mọi ngưỡng |
+| Bằng chứng 3 | `R-S4-after-20261119-164007-d1ada5` (HN + HCM): 0 ca ùn, chờ lâu nhất 40 phút, chi phí 5.747đ ≤ 7.000đ, ROI 0,74 ≥ 0,4, tổng hoàn 292.000đ ≤ ngân sách 300.000đ; bộ nền `R-base-after-20261119-164006-d1ada5` 1,0 không regression. Còn `escalation_rate` 0,3565 > 0,25 (ngưỡng nên có) |
+| Khớp dòng nào trong `decision_rule` đã ký? | "Thu hẹp: Ba chỉ số an toàn = 0 trên phạm vi còn giữ, nhưng … escalation_rate hoặc một ngưỡng business_ops chưa đạt ở một kho hay một nhóm ticket: cắt kho/phần trăm đó về làm tay (độ phủ vẫn > 0)". Không chọn Tiếp tục vì dòng Tiếp tục đã ký đòi escalation_rate ≤ 0,25 và đủ ngưỡng ở phạm vi ban đầu |
+| Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | Cắt kho **DN** và **CT** (`business.pilot_scope = warehouse [HN, HCM]`); còn 2 kho, độ phủ 56% ticket ngày sale (0,561), 59% ngày thường (0,5909); **1 người trực** (NV-HANH), kiểm mẫu 10%; trần hoàn tự động 300.000đ/ngày, phần vượt chuyển NV-HANH. Ticket DN, CT về quy trình CSKH làm tay như trước pilot |
+| Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | Không áp dụng (song song: giảm ca chuyển người nhánh [2] để mở lại DN, CT) |
+| Nếu Dừng: bài học ghi lại | Không áp dụng |
+| Ngày quyết định lại (trừ khi Dừng) | Trước đợt sale kế tiếp (tin nhắn: "mai còn một đợt sale") và chậm nhất 2026-11-30, trước khi REFUND-v4 có hiệu lực; dự: Quân, Lên, Nguyên, NV-HANH, NV-TUNG |
+| PIC ký | Nguyễn Văn Hải Quân (Sản phẩm và kinh doanh); PIC vận hành NV-TUNG (`operations.pic`) |
 
 **Chỉ ở v2**
-- Quyết định đổi hay giữ so với v1? Vì con số nào: …
-- Report tự kiểm tra: mã lần chạy `__________` · ô nào còn đỏ (nguyên nhân × tầng): …
-- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: …
-- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: …
-- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: …
+- Quyết định đổi hay giữ so với v1? Vì con số nào: **Đổi** từ Tiếp tục (v1) sang **Thu hẹp**. v1 chỉ có bộ nền (mọi ngưỡng đạt, 0 ca ùn). Gói 11.11 cho thấy ở đủ 4 kho: 8–10 ca ùn, chờ 106–128 phút, tổng hoàn 422.000đ > 300.000đ; thêm người thì ROI 0,32 < 0,4
+- Report tự kiểm tra: mã lần chạy `R-S4-grade-20261119-164007-d1ada5` · ô nào còn đỏ (nguyên nhân × tầng): không ô nào đỏ (`integrity`, `criteria`, `visible`, `regression`, `monitor` ✅; `hidden` chưa chạy trên máy bàn)
+- Cổng vòng 1 (mốc prepared) đã đỡ được gì trước khi bàn biết sự cố, và bỏ sót gì: đỡ trọn nhánh tiền và hãng (hoàn sai 160.000đ → 0, lỗi hãng oan 27 → 0) nhờ cổng tính lại từ tracking. Bỏ sót: cổng chuyển người sau khi đã ghi tiền (19 lượt hỏng, ca ùn 4 → 10), và trần ngày cố định không theo ngân sách ngày sale
+- Report ghi "được phép cân nhắc Tiếp tục" hay "không đủ căn cứ"? Quyết định của bàn có khớp không: Report ghi "được phép cân nhắc Tiếp tục" — nhưng đó là ở phạm vi đã thu hẹp. Bàn chọn **Thu hẹp** để nói đúng điều kiện đạt (chỉ HN + HCM, 1 người trực, trần 300.000đ); khớp report và khớp `decision_rule` đã ký
+- Một thứ bộ thử hôm nay chưa đo, và nó ảnh hưởng quyết định ra sao: bộ thử chỉ có một ngày sale, phân bố giờ tới cố định; chưa đo nếu sale ở HN + HCM đông gấp 4–5 lần hoặc LLM lỗi lâu hơn. Nếu monitor `peak_hour_review_load` > 6 ca/giờ thì phải thu hẹp tiếp (percent) theo runbook
 
 **Ba dòng bắt buộc** (chép nguyên ba câu này sang `submission/submission.json`, mục `three_lines`)
-1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: …
-2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: …
-3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: …
+1. Một giả định về môi trường mà thiết kế của đội đang dựa vào, có thể sai ngoài thực tế: Cổng của bàn tin hoàn toàn vào tracking: `delay_cause` (ví dụ `MERCHANT_HANDOVER` ở 10 đơn của thẻ S4) và `delivered_date` do điểm phát, shop và hãng ghi là đúng và kịp thời. Ngày sale, quét sót hoặc ghi bù tay thì cổng sẽ chặn sai hoặc cho qua sai mà không biết.
+2. Gate của đội chỉ GIẢM khả năng hay thực sự NGĂN được tác hại? Vì sao: NGĂN được lỗi hãng oan và hoàn sai (27 → 0 lỗi, 160.000đ → 0đ trên gói 11.11) vì cổng tính lại từ tracking và chính sách, không dựa vào LLM nên LLM lỗi 60% vẫn không ghi sai được. Hàng chờ chỉ GIẢM (10 → 0 ca ùn, chờ 128 → 40 phút) nhờ thu hẹp còn HN + HCM; lượng ticket tăng hơn nữa vẫn có thể ùn.
+3. Vì data là mock, cần đo lại gì trong pilot thật trước Bước đánh giá 2: (a) tỉ lệ LLM trả 429 thật giờ cao điểm (mock 60%) và `fail_open_rate`; (b) số phút thật NV-HANH cần cho một ca vỡ hàng/thất lạc (mock 10 phút/ca, 6 ca/giờ) và phân bố giờ tới ngày sale ở HN + HCM; (c) đối soát tuần của NV-OANH: tổng hoàn tự động so với ngân sách Finance từng ngày và số lỗi hãng bị khiếu nại.
