@@ -9,7 +9,7 @@ Cầm bút lệnh, trace, cổng code và chỉ số theo dõi. **Máy của Lê
 - `TEAM.md` mục `## NguyenVanLen-2A202604007`.
 - Phiếu A: A2 **cột trái** câu 1.3.
 - Phiếu B: B0, B1, B2, B7.1, B7.2, B7.3.
-- Phiếu C: dòng `Thẻ đã bốc:`, C0, C2, C7 (người ghi cả bảng), C8.
+- Phiếu C: C8 (chỉ số theo dõi + code `monitors.py`). Dòng `Thẻ đã bốc`, C0, C2, C7 đã chuyển sang Quân (chia lại 16:25).
 
 **Không đụng:** `config/acceptance_criteria.json`, `config/operating_gates.json` (Quân và Nguyên sửa; Lên chỉ đọc), `config/switches.json`, bản chụp vòng 1 sau khi tạo, `submission/submission.json`.
 
@@ -44,17 +44,19 @@ Cầm bút lệnh, trace, cổng code và chỉ số theo dõi. **Máy của Lê
 - [ ] `python3 -m lab10.eval --suite base --stage prepared` → `python3 -m lab10.gate --run runs/<mã>/report.json`. Gửi mã + output cho Quân (B8). Ghi B0 dòng 3.
 - [ ] Commit bản chụp vòng 1 + `guards.py` + Phiếu B phần của mình, push (lệnh cuối Phiếu B mục B8).
 
-### Phút 125–135 · Nhận thẻ (chỉ máy Lên)
-- [ ] Lab Coach báo số thẻ. Chạy từng dòng (thay `Sx`):
+### Phút 125–135 · Nhận thẻ (Quân kéo thẻ, Lên chạy grade)
+- [ ] ⚠️ Trước `checkpoint`: trả `tests/test_public.py` về bản gốc (`git checkout e8b4fd8 -- tests/test_public.py`), commit, push. File này bị khoá bằng hash.
+- [ ] Chạy `checkpoint` → `eval --stage prepared` → `gate`, push, báo Quân kéo thẻ S4.
+- [ ] (Tham khảo, Quân làm) lệnh kéo thẻ:
   `git fetch https://github.com/VinUni-AI20k/K5_L3_Day10_PoC-to-Pilot_Gate1_cards.git main` → `git checkout FETCH_HEAD -- incidents/Sx` → `git commit -m "Nhận thẻ Sx"` → `python3 -m lab10.grade --incident Sx` → `git push origin main`.
-- [ ] Ghi `Thẻ đã bốc: Sx` ở đầu Phiếu C và C0. Báo nhóm số thẻ để Quân điền ô thẻ trong `TEAM.md`.
+- [ ] Sau khi Quân push thẻ: `git pull`, `python -m lab10.grade --incident S4`, gửi report + mã lần chạy cho cả bàn.
 
 ### Phút 135–185 · Phân tích và sửa
-- [ ] **Câu 3.1** (C2): trace ≥ 2 ticket hỏng theo hai kiểu khác nhau (`python3 -m lab10.trace --suite Sx --ticket <ID> --seed 11`); ≥ 2 lỗi nguồn khác nhau, ≥ 1 lỗi chìm. Gửi danh sách cho Quân (C6) và Nguyên (C4).
+- [ ] (C2 chuyển sang Quân) Đọc C2 của Quân để biết nhánh kỹ thuật cần sửa.
 - [ ] **Câu 3.5** (code): sửa nhánh trong `write_gate`/`pre_guard` cho nguyên nhân kỹ thuật.
 - [ ] **Câu 3.6** (C8): một hàm mới trên dict `MONITORS` (nhận `trials`, trả về một số), đăng ký `"tên_chỉ_số": tên_hàm`. `escalation_rate` không tính.
 - [ ] Mỗi lần Quân/Nguyên push config: `git pull` rồi `eval --suite Sx --stage after --note "đổi MỘT thứ: ..."` và `eval --suite base --stage after --note "kiểm lại bộ nền"`.
-- [ ] **C7**: ghi cả bảng sửa (hàng code của mình + hàng Quân, Nguyên gửi), mỗi biện pháp "giảm" hay "ngăn".
+- [ ] (C7 chuyển sang Quân) Gửi Quân nội dung hàng sửa code của mình cho bảng C7: nguyên nhân, chỗ sửa, giảm hay ngăn.
 - [ ] Phút 180: `python3 -m lab10.grade --incident Sx` → `monitor ✅`, `regression ✅`. Gửi report cho cả bàn.
 
 ### Phút 195–200 · Gom bài (chỉ máy Lên)

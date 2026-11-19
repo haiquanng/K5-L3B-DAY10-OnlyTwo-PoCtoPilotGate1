@@ -22,11 +22,12 @@ Chỉ người cầm bút được sửa và commit phần đó. Người khác 
 |---|---|---|
 | `config/acceptance_criteria.json` + `.lock` | **Quân** | Chỉ Quân ký. Ký xong thì **không ai** mở file này nữa (kể cả mở rồi lưu lại) |
 | `lab10/guards.py`, `lab10/monitors.py` | **Lên** | |
+| `tests/` (mọi file) | (không ai) | **Bị khoá bằng hash** (`lab10/MANIFEST.json`). Sửa là `1 integrity ❌` → bài không được tính. Test riêng của bàn để ngoài repo hoặc chạy bằng `trace --adhoc` |
 | `config/operating_gates.json` mục `business` | **Quân** | Sửa đúng 4 dòng của khối `business` |
 | `config/operating_gates.json` mục `operations`, `legal` | **Nguyên** | Sửa đúng trong hai khối đó |
 | `config/switches.json` | (không ai) | README không cho sửa file này |
 | `lab10/guards_round1.py`, `config/operating_gates.round1.json`, `config/round1.lock` | **Lên** (lệnh 5 tạo) | Tạo xong thì không ai sửa |
-| `incidents/Sx/` | **Lên** (nhận thẻ) | Không sửa nội dung thẻ |
+| `incidents/S4/` | **Quân** kéo thẻ (3 lệnh git) · **Lên** chạy `grade` | Thẻ của bàn: **S4**. Kéo thẻ CHỈ SAU khi Lên đã chạy `checkpoint`. Không sửa nội dung thẻ |
 | `submission/submission.json` | **Nguyên** | `team` và `members` đã điền sẵn |
 | `submission/` (phần còn lại, do lệnh 7 sinh ra) | **Lên** chạy lệnh 7, **Nguyên** soát | Vì `runs/` chỉ có trên máy Lên |
 | `TEAM.md` phần đầu (thông tin nhóm, bảng thành viên) | **Quân** | Đã điền sẵn, chỉ còn ô "Thẻ đã bốc" |
@@ -39,7 +40,7 @@ Mục trong ba phiếu (`templates/`):
 |---|---|---|---|
 | **A** | dòng `Bàn:` · A1 câu 1.1 · A3 câu 1.5 (ghi kết luận cả bàn) · A4 câu 1.6 · A5 | A2 **cột trái** câu 1.3 (làm trước) | A1 câu 1.2 · A2 **cột phải** câu 1.4 (làm sau Lên) |
 | **B** | dòng `Bàn:` · B3 · B6 (ghi pre-mortem cả bàn) · B7.4 · B8 (quyết định v1) | B0 · B1 · B2 · B7.1 · B7.2 · B7.3 (cùng Quân) | B4 · B5 · B7.5 · B7.6 |
-| **C** | dòng `Bàn:` · C1 (ghi cả bàn) · C5 câu 3.2 · C6 (ghi fault tree cả bàn) · C12 (quyết định v2) | dòng `Thẻ đã bốc:` · C0 · C2 · C7 (ghi cả bảng) · C8 | C3 · C4 · C5 câu 3.3 · C9 · C10 · C11 |
+| **C** | dòng `Bàn:` · dòng `Thẻ đã bốc: S4` · C0 (chép mã Lên gửi) · C1 (ghi cả bàn) · C2 (trace) · C5 câu 3.2 · C6 (ghi fault tree cả bàn) · C7 (ghi cả bảng) · C12 (quyết định v2) | C8 (chỉ số theo dõi + code `monitors.py`) | C3 (S4 không cần) · C4 · C5 câu 3.3 · C9 · C10 · C11 · bổ sung B7.6 theo thẻ |
 
 **Bảng chung = một người ghi.** Git báo conflict khi hai người sửa hai dòng sát nhau, kể cả hai hàng khác nhau trong cùng một bảng. Vì vậy bảng nào nhiều người góp (A2, B6, C1, C6, C7) chỉ có một người gõ; người khác đọc nội dung cho người đó. Riêng A2: Lên điền cột câu 1.3, push, báo nhóm; Nguyên `git pull` xong mới điền cột câu 1.4.
 
@@ -85,8 +86,8 @@ git push origin main
 | ~100 | Nguyên | Khối `operations` + `legal` đã push | Lên thử lại `eval --stage after` |
 | **103** | Quân, Nguyên | Mọi thay đổi config đã push, **dừng sửa** | **Lên pull, chạy lệnh 5 (chốt), eval prepared, gate** |
 | 108–113 | Lên | Mã lần chạy prepared + output gate | Quân viết B8 (v1); cả bàn duyệt |
-| **125** | **Lên** | **Nhận thẻ, lệnh 6, push** | Cả bàn `git pull`, đọc `incidents/Sx/card.md` |
-| ~155 | Lên | Danh sách ticket hỏng + nguồn lỗi (C2) | Quân (C5, C6), Nguyên (C3, C4) |
+| **125** | **Quân** → **Lên** | Quân kéo thẻ S4 + ghi `Thẻ đã bốc: S4`, push → Lên pull, chạy lệnh 6 `grade --incident S4`, gửi report | Cả bàn `git pull`, đọc `incidents/S4/card.md` |
+| ~155 | Quân | Danh sách ticket hỏng + nguồn lỗi (C2: `S4-07`, `S4-08` nhiều seed) | Quân (C5, C6), Nguyên (C4), Lên (sửa code) |
 | 155–175 | Quân, Nguyên | Sửa config (`business` / `operations`, `legal`), push | Lên chạy `eval --suite Sx --stage after` |
 | **180** | Quân, Nguyên | **Dừng sửa config** | Lên chạy lệnh 6 lần cuối, gửi report |
 | 185–195 | Quân | C12 (v2 + ba dòng bắt buộc), push | Nguyên chép vào `submission.json` |

@@ -48,11 +48,15 @@
 - [ ] Nhận mã lần chạy prepared + output lệnh 4 từ Lên.
 - [ ] **B8 cột v1**: một quyết định, ba bằng chứng có mã lần chạy, dòng `decision_rule` tương ứng, kho/hãng có số xấu nhất, ngày quyết định lại. Cả bàn duyệt rồi commit, push.
 
-### Phút 125–185 · Phiếu C
+### Phút 125–185 · Phiếu C (thẻ S4; chia lại 16:25: nhận thêm kéo thẻ, C0, C2, C7)
+- [ ] Chỉ sau khi Lên báo đã `checkpoint`: kéo thẻ S4 (`git fetch https://github.com/VinUni-AI20k/K5_L3_Day10_PoC-to-Pilot_Gate1_cards.git main` → `git checkout FETCH_HEAD -- incidents/S4` → `git commit -m "Nhận thẻ S4"`), ghi `Thẻ đã bốc: S4` ở đầu Phiếu C và ô thẻ trong `TEAM.md`, push, báo Lên chạy `grade`.
+- [ ] **C0**: chép mã lần chạy base, prepared, after và grade mà Lên gửi.
+- [ ] **C2** (câu 3.1): `python3 -m lab10.trace --suite S4 --ticket S4-07 --seed 11` và `S4-08` ở seed 11/22/33/44/55; ≥ 2 lỗi nguồn khác nhau, ≥ 1 lỗi chìm. Gửi Nguyên (C4) và Lên (sửa code).
 - [ ] **C1** (câu 3.0): cả bàn đọc report prepared; Quân ghi cổng vòng 1 đỡ được ô nào, dòng nào vượt trần, sự cố có trong pre-mortem không (đối chiếu B6).
 - [ ] **Câu 3.2** (C5): một specification, kiểm được bằng code hoặc một con số trong report.
 - [ ] **C6** (câu 3.4): ghi fault tree trước khi sửa; ít nhất hai nhánh ở hai tầng; mỗi lá có bằng chứng (`ticket@seed`, trường dữ liệu, dòng report).
 - [ ] **Câu 3.5** (phần `business`): đổi `pilot_scope` / trần / ngân sách nếu nguyên nhân là tiền hoặc phạm vi. **Không thu hẹp về 0.** Push, báo Lên chạy lại. Gửi Lên nội dung hàng của mình cho bảng C7.
+- [ ] **C7**: ghi cả bảng sửa (hàng code của Lên, hàng `business` của mình, hàng `operations`/`legal` của Nguyên), mỗi biện pháp "giảm" hay "ngăn".
 - [ ] Phút 180: dừng sửa config.
 
 ### Phút 185–200 · Quyết định v2
