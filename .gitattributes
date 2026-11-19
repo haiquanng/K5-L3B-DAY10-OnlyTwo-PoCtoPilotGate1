@@ -1,1 +1,3 @@
 config/acceptance_criteria.json text eol=crlf
+lab10/guards_round1.py text eol=lf
+config/operating_gates.round1.json text eol=lf
