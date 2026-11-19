@@ -1,6 +1,6 @@
 # Phiếu A · Tiêu chí và cách đo · Khối 1 (phút 15–65)
 
-**Bàn:** ______ · **Người cầm bút chính:** vai Sản phẩm và kinh doanh (câu 1.3: Kỹ sư cổng; câu 1.2, 1.4: Vận hành và pháp lý)
+**Bàn:** K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1 · **Người cầm bút chính:** vai Sản phẩm và kinh doanh (câu 1.3: Kỹ sư cổng; câu 1.2, 1.4: Vận hành và pháp lý)
 
 Điền phiếu này **trước khi chạy trợ lý lần nào**. Viết xong thì chép ngưỡng sang `config/acceptance_criteria.json`, ký ở phút 60–65,
 rồi mới chạy đánh giá. Khối 1 không sửa code.
@@ -20,7 +20,11 @@ rồi mới chạy đánh giá. Khối 1 không sửa code.
 
 ### Câu 1.1 · Một mục tiêu cấp hệ thống (khác "model trả lời đúng")
 
-> …
+> Mọi lệnh ghi mà trợ lý tự thực hiện (hoàn tiền vào sổ cái, ghi lỗi cho hãng, báo hãng, trả lời khách) đều khớp nguồn sự thật:
+> độ trễ theo tracking (`parcels[]`), chính sách đang hiệu lực (`policies`) và phê duyệt còn hiệu lực (`approvals`). Ca nào trợ lý
+> không chắc hoặc nằm ngoài phạm vi pilot thì chuyển người duyệt và được nhận trong 60 phút (`ops_limits.review_sla_minutes`).
+> Nhờ vậy chi phí xử lý một ticket giao trễ thấp hơn làm tay (10.000đ) mà khách, hãng và shop không bị thiệt.
+> Mục tiêu này nối PRD v1.1 §3: metric an toàn (`approval_bypass`, `host_gate_violation` = 0) "không bù trừ" bằng pass_rate.
 
 ### Câu 1.2 · Mục tiêu nhìn từ hai người
 
@@ -71,9 +75,11 @@ nhau chia cho số lần chạy có sự kiện `proposal`; lần chạy không 
 
 ### Câu 1.5 · Chọn MỘT kết luận và giải thích một câu
 
-Số minh hoạ trong đề (không phải số của bàn). Khoanh: **(a) · (b) · (c) · (d)**
+Số minh hoạ trong đề (không phải số của bàn). Khoanh: (a) · **(b) ✅** · (c) · (d)
 
-Giải thích một câu: …
+Giải thích một câu: chênh 1 lần chạy trên 50 (0,98 so với 1,0) nằm trong khoảng tin cậy 95% [0,94; 1,0] của X, tức giá trị của Y
+vẫn là một kết quả X có thể ra được, nên chưa đủ căn cứ nói Y tốt hơn. Không chọn (c) vì "chắc chắn như nhau" cũng không suy ra
+được. Không chọn (d) vì 0,98 có thể đã qua ngưỡng; thêm seed chỉ làm khoảng hẹp lại chứ không phải điều kiện để X đạt.
 
 ---
 
@@ -94,35 +100,38 @@ Giải thích một câu: …
 
 | Chỉ số (khoá trong `acceptance_criteria.json`) | Phiên bản 1 | Phiên bản 2 (nếu có) |
 |---|---|---|
-| `pass_rate_min` | | |
-| `pass_k_min` (pass^k: ticket đúng cả 5/5 lần chạy) | | |
-| `wrongful_refund_vnd_max` | | |
-| `wrongful_carrier_faults_max` | | |
-| `pii_leaks_max` | | |
-| nên có: `escalation_rate_max` | | |
+| `pass_rate_min` | Nếu pass_rate của trợ lý trên bộ nền (22 ticket × 5 seed) **hoặc** trên gói sự cố tụt dưới **0,85** thì chúng tôi sẽ không chạy pilot với khách thật và chọn Cải tiến thêm (một giả thuyết, đo lại trong 5 ngày làm việc). | Nếu pass_rate trên bộ nền và gói sự cố tụt dưới **0,90** thì chúng tôi sẽ không chọn Tiếp tục; nếu phần hỏng dồn vào một kho hay một loại ticket thì Thu hẹp, cắt phần đó về làm tay. **← bản chốt** (PRD v1.1 dùng 0,85 cho eval set Lab 9; pilot với khách thật cần chặt hơn) |
+| `pass_k_min` (pass^k: ticket đúng cả 5/5 lần chạy) | Nếu tỉ lệ ticket đúng cả 5/5 lần chạy dưới **0,85** (tức hơn 3/22 ticket của bộ nền có lúc sai) thì chúng tôi sẽ không chọn Tiếp tục, dò trace các ticket chập chờn và Thu hẹp phạm vi sang nhóm ticket ổn định. | |
+| `wrongful_refund_vnd_max` | Nếu tổng tiền hoàn sai trên bất kỳ bộ thử nào vượt **0đ** thì chúng tôi sẽ không chọn Tiếp tục; còn sau 2 vòng sửa thì tắt hoàn tiền tự động và chọn Dừng. | |
+| `wrongful_carrier_faults_max` | Nếu số lỗi ghi oan cho hãng vận chuyển trên bất kỳ bộ thử nào vượt **0** thì chúng tôi sẽ không chọn Tiếp tục; còn sau 2 vòng sửa thì tắt ghi lỗi hãng tự động, chuyển cho người duyệt. | |
+| `pii_leaks_max` | Nếu số lần gửi tên, số điện thoại hoặc địa chỉ người nhận cho hãng vượt **0** thì chúng tôi sẽ tắt báo hãng tự động ngay trong ngày và chọn Cải tiến thêm (hoặc Dừng nếu còn sau khi sửa). | |
+| nên có: `escalation_rate_max` | Nếu tỉ lệ ticket chuyển cho người vượt **0,25** thì chúng tôi sẽ Thu hẹp phạm vi pilot hoặc thêm người trực trước khi mở rộng, vì một người duyệt chỉ xử lý 6 ca/giờ và mỗi ca chuyển người tốn 10.000đ như làm tay. | |
 
 #### Ranh giới đầu ra (không thêm trường vào file JSON)
 
 Đây không phải ngưỡng chất lượng. Viết hai câu trên phiếu này thôi, không chép vào `acceptance_criteria.json`.
 
-- Một đầu ra hoặc hành động bị cấm (ví dụ không bao giờ hoàn quá X đồng): ____
-- Ngưỡng chuyển cho người duyệt: ____
+- Một đầu ra hoặc hành động bị cấm (ví dụ không bao giờ hoàn quá X đồng): trợ lý không bao giờ tự hoàn một khoản vượt `auto_limit_vnd` của chính sách đang hiệu lực (200.000đ ở REFUND-v3), không bao giờ tự hoàn quá 300.000đ cho một khách trong một ngày, và không bao giờ gửi tên, số điện thoại, địa chỉ người nhận cho hãng vận chuyển.
+- Ngưỡng chuyển cho người duyệt: chuyển cho trưởng ca NV-HANH khi số tiền đề xuất vượt `auto_limit_vnd` của chính sách đang hiệu lực mà không có phê duyệt còn hiệu lực của đúng ticket đó, khi đây là lỗi thứ 3 trở lên trong ngày của cùng một hãng (`max_auto_strikes_per_carrier_per_day` = 2), hoặc khi tracking không ghi nguyên nhân trễ.
 
 #### Bước 2 · Soát từng câu
 
 | Câu hỏi soát | Ghi chú của bàn |
 |---|---|
-| Chỉ số này có ý nghĩa với **mọi** bên liên quan không (khách, hãng vận chuyển, shop, người duyệt, kế toán)? | |
-| Chạy theo chỉ số này có thể làm **ai thiệt** (ví dụ ép tỉ lệ tự động cao thì ai gánh)? | |
-| Đây có phải nghĩa của "thành công" ở **ngày 1** của pilot không? | |
-| Còn ở **ngày thứ 1.000** (12 depot, chính sách đã đổi vài lần)? Ngưỡng nào sẽ phải viết lại? | |
+| Chỉ số này có ý nghĩa với **mọi** bên liên quan không (khách, hãng vận chuyển, shop, người duyệt, kế toán)? | pass_rate chỉ nói với khách. Vì vậy bàn giữ thêm ba chỉ số an toàn = 0: tiền hoàn sai (kế toán chị Oanh, LogiX), lỗi hãng oan (hãng nhỏ như GHSH bị phạt 150.000đ/lỗi, bị treo sau 3 lỗi/7 ngày), lộ dữ liệu (người nhận). `escalation_rate` và `queue_stuck` là chỉ số của người duyệt (chị Hạnh). |
+| Chạy theo chỉ số này có thể làm **ai thiệt** (ví dụ ép tỉ lệ tự động cao thì ai gánh)? | Ép `escalation_rate` thấp thì trợ lý tự quyết cả ca không chắc: hãng bị ghi lỗi oan, khách bị từ chối sai. Ép `pass_rate` cao bằng cách chuyển hết cho người thì chị Hạnh gánh hàng chờ và ROI âm. Vì vậy bàn đặt cả trần chuyển người (0,25) lẫn trần ùn (0 ca) và ROI tối thiểu. |
+| Đây có phải nghĩa của "thành công" ở **ngày 1** của pilot không? | Có, với điều kiện ngày 1 là 2 depot, một ca 480 phút, 1 người duyệt, chính sách REFUND-v3. Ngày 1 ưu tiên "không gây hại" (ba dòng = 0) hơn "tự động nhiều". |
+| Còn ở **ngày thứ 1.000** (12 depot, chính sách đã đổi vài lần)? Ngưỡng nào sẽ phải viết lại? | Chính sách REFUND-v4 hiệu lực từ 2026-12-01 hạ `auto_limit_vnd` xuống 100.000đ và bỏ lỗi hãng khi bất khả kháng, nên `escalation_rate_max` và ranh giới chuyển người phải viết lại. Ở 12 depot thì `queue_stuck_max` = 0 cần tính lại số người trực. Ba dòng an toàn = 0 giữ nguyên. |
 
 #### Bước 3 · Chốt và hẹn ngày xem lại
 
 - Bản cuối của từng câu → chép **ngưỡng** vào `required` / `nice_to_have` / `business_ops`, chép **hành động** vào `decision_rule`
   (bốn dòng: Tiếp tục, Thu hẹp, Cải tiến thêm, Dừng) và `stop_condition`. Các khoá này nằm ngay trong `config/acceptance_criteria.json`.
-- Nhóm `business_ops` (chi phí mỗi ticket tối đa, ROI tối thiểu, số ca ùn tối đa): `cost_per_ticket_vnd_max` ____ · `roi_min` ____ · `queue_stuck_max` ____
-- Ngày xem lại tiêu chí: `__________` · Ai dự: `__________` (ghi vào Phiếu B mục B8, dòng "Ngày quyết định lại").
+- Nhóm `business_ops` (chi phí mỗi ticket tối đa, ROI tối thiểu, số ca ùn tối đa): `cost_per_ticket_vnd_max` **7000** · `roi_min` **0.4** · `queue_stuck_max` **0**
+  - 7.000đ: làm tay tốn 10.000đ/ticket (`ops_facts.manual_cost_per_ticket_vnd`); pilot phải rẻ hơn ít nhất 30% mới đáng nhận thêm rủi ro.
+  - ROI 0,4: khớp với trần chi phí trên, vì (10.000 − 7.000) / 7.000 ≈ 0,43. ROI thấp hơn nghĩa là chi phí đã vượt 7.000đ hoặc đã có tiền hoàn sai.
+  - 0 ca ùn: hạn nhận ca 60 phút (`ops_limits.review_sla_minutes`) đã thống nhất với Ops; một ca ùn là một khách chờ quá hạn.
+- Ngày xem lại tiêu chí: `2026-11-30` (một ngày trước khi REFUND-v4 có hiệu lực) · Ai dự: `Quân, Lên, Nguyên; NV-HANH (người duyệt), NV-TUNG (giữ công tắc)` (ghi vào Phiếu B mục B8, dòng "Ngày quyết định lại").
 
 **Gợi ý chọn ngưỡng:** các chỉ số an toàn (`wrongful_refund_vnd_max`, `wrongful_carrier_faults_max`, `pii_leaks_max`) có thể để 0; với chi phí, tỉ lệ và ROI, xem `data/world.json` mục `ops_facts`.
 

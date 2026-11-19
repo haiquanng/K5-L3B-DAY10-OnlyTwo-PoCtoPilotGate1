@@ -23,10 +23,10 @@
 - [ ] Gửi link PRD v1.1 cho cả bàn đọc §2, §3, §6 (Nguyên cần cho câu 1.2).
 
 ### Phút 15–60 · Phiếu A (chưa chạy trợ lý)
-- [ ] **Câu 1.1** (A1): một mục tiêu cấp hệ thống, khác "model trả lời đúng", dựa vào PRD §3.
-- [ ] **Câu 1.5** (A3): cả bàn chọn một kết luận, Quân ghi một câu giải thích.
-- [ ] **Câu 1.6** (A4): mỗi chỉ số bắt buộc thành câu "Nếu … thì chúng tôi sẽ …"; soát bốn câu hỏi; hai câu ranh giới đầu ra (một hành động bị cấm, một ngưỡng chuyển người duyệt).
-- [ ] Điền `config/acceptance_criteria.json`: `team` = `K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1`, `signed_by`, 5 ngưỡng `required`, `nice_to_have.escalation_rate_max`, 3 ngưỡng `business_ops`, `stop_condition`, 4 dòng `decision_rule`. Không chép ngưỡng từ file `.example.json`.
+- [x] **Câu 1.1** (A1): một mục tiêu cấp hệ thống, khác "model trả lời đúng", dựa vào PRD §3.
+- [x] **Câu 1.5** (A3): cả bàn chọn một kết luận, Quân ghi một câu giải thích.
+- [x] **Câu 1.6** (A4): mỗi chỉ số bắt buộc thành câu "Nếu … thì chúng tôi sẽ …"; soát bốn câu hỏi; hai câu ranh giới đầu ra (một hành động bị cấm, một ngưỡng chuyển người duyệt).
+- [x] Điền `config/acceptance_criteria.json`: `team` = `K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1`, `signed_by`, 5 ngưỡng `required`, `nice_to_have.escalation_rate_max`, 3 ngưỡng `business_ops`, `stop_condition`, 4 dòng `decision_rule`. Không chép ngưỡng từ file `.example.json`.
 - [ ] Phút ~45: hỏi Lên về `pass_rate_min`, `pass_k_min`; hỏi Nguyên về `pii_leaks_max`, `queue_stuck_max`, `escalation_rate_max`.
 
 ### Phút 60–65 · Ký (chỉ Quân)
@@ -36,11 +36,11 @@
 - [ ] Ghi A5 (giờ ký, mã commit). Báo nhóm: "Đã ký, Lên pull rồi chạy base."
 
 ### Phút 65–85 · Phiếu B khối 2A
-- [ ] **Câu 2.3** (B3): bản đồ dữ liệu + một ví dụ drift trong 3 tháng (xem `data/world.json` → `policies`, `orders[].parcels`, `ops_limits`, `ops_facts`). Nói rõ đầu vào đổi hay quan hệ vào–ra đổi, chỉ số nào phát hiện.
+- [x] **Câu 2.3** (B3): bản đồ dữ liệu + một ví dụ drift trong 3 tháng (xem `data/world.json` → `policies`, `orders[].parcels`, `ops_limits`, `ops_facts`). Nói rõ đầu vào đổi hay quan hệ vào–ra đổi, chỉ số nào phát hiện.
 - [ ] **Câu 2.5** (B6): điều phối pre-mortem 8–10 phút, ghi bảng, đủ bốn lăng kính; khoanh 2–3 lý do thành cổng.
 
 ### Phút 85–105 · Cổng kinh doanh
-- [ ] **Câu 2.9** (B7.4): điền khối `business` trong `config/operating_gates.json`, mỗi số một câu lý do từ `ops_limits`, `ops_facts`. **Push trước phút ~95**, báo nhóm.
+- [x] **Câu 2.9** (B7.4): điền khối `business` trong `config/operating_gates.json`, mỗi số một câu lý do từ `ops_limits`, `ops_facts`. **Push trước phút ~95**, báo nhóm.
 - [ ] **Câu 2.8** (B7.3): cùng Lên nghĩ 2 "ticket hiểm" cho behavioral test (Quân là "người không viết code" của câu này).
 - [ ] Phút 103: dừng sửa config, đã push hết.
 
@@ -73,3 +73,26 @@
 | §2 phạm vi pilot (một đơn của chính khách; ngoài phạm vi luôn `escalated`) | `business.pilot_scope`; câu ranh giới đầu ra ở 1.6 |
 | §5 cổng release (exit 1 thì không merge; không waiver cho metric an toàn) | `decision_rule` và `stop_condition` |
 | §6 rủi ro mở (mock tất định, CI rộng, bug ≤ 1/3 seed) | Pre-mortem B6; dòng 3 của C12 (đo lại gì trong pilot thật) |
+
+## Nháp (chỉ Quân sửa phần này)
+
+**Trạng thái (2026-11-19):** Phiếu A (1.1, 1.5, 1.6), `acceptance_criteria.json`, B3, B7.4 và khối `business` đã điền, **chưa ký**.
+Trước khi ký: Lên và Nguyên đọc lại ngưỡng; câu 1.5 cả bàn xác nhận chọn (b); xét lại `pilot_scope` sau lần chạy base (B7.4 đang ghi "tạm").
+
+Ngưỡng đã chọn và lý do ngắn (để nói lúc demo):
+
+| Khoá | Giá trị | Vì sao |
+|---|---|---|
+| `pass_rate_min` | 0,90 | PRD v1.1 dùng 0,85 cho mock Lab 9; pilot với khách thật cần chặt hơn |
+| `pass_k_min` | 0,85 | Tối đa 3/22 ticket được chập chờn |
+| 3 chỉ số an toàn | 0 | PRD §3: an toàn không bù trừ |
+| `escalation_rate_max` | 0,25 | 1 người duyệt 6 ca/giờ; mỗi ca chuyển người tốn 10.000đ như làm tay |
+| `cost_per_ticket_vnd_max` | 7.000 | Rẻ hơn làm tay (10.000đ) ít nhất 30% |
+| `roi_min` | 0,4 | (10.000 − 7.000) / 7.000 ≈ 0,43 |
+| `queue_stuck_max` | 0 | SLA 60 phút đã thống nhất với Ops |
+| `daily_refund_cap_vnd` | 1.400.000 | 2.000.000 (Finance) − 2 × 300.000 (trần mỗi khách) |
+| `cost_budget_per_ticket_vnd` | 1.400 | 1.500 (trần LLM) − 100 (ghi chú giải thích) |
+
+Hai lý do pre-mortem của Quân (mang vào B6, bước 1 im lặng):
+1. (Kinh doanh) Sau khi REFUND-v4 có hiệu lực ngày 2026-12-01, hạn mức tự động chỉ còn 100.000đ: phần lớn ca phải chuyển người, chi phí mỗi ticket vượt 10.000đ làm tay, ROI âm nên Finance cắt pilot.
+2. (Kinh doanh) Một ngày cao điểm, trợ lý tự hoàn vượt ngân sách 2.000.000đ của Finance vì không có trần ngày trong code; kế toán không khớp sổ, Finance rút quyền hoàn tự động. → Cổng: `business.daily_refund_cap_vnd`.

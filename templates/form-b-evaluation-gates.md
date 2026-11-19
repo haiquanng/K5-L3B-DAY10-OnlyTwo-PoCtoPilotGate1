@@ -1,6 +1,6 @@
 # Phiếu B · Đo, rủi ro, cổng vòng 1 và quyết định v1 · Khối 2A + 2B + chốt (phút 65–115)
 
-**Bàn:** ______
+**Bàn:** K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1
 
 Tiêu chí đã ký ở Phiếu A. Từ phút 65 bàn mới được chạy trợ lý. Khối 2A (65–85) chưa sửa code hay config. Khối 2B (85–105) sửa
 `lab10/guards.py` và `config/operating_gates.json`. Phút 105–115 chốt cổng vòng 1 rồi viết quyết định v1. Sau phút 115 không sửa phiếu này
@@ -120,24 +120,24 @@ Gợi ý: mở `data/world.json` phần `policies`, `orders[].parcels`, `ops_lim
 
 | Mục | Điền cho trợ lý hoàn tiền |
 |---|---|
-| Người dùng | |
-| Việc người dùng cần làm xong | |
-| Đầu ra của hệ thống (kể cả các lệnh ghi) | |
-| Dữ liệu trợ lý đọc lúc chạy (bảng nào trong `data/world.json`) | |
-| Trường then chốt quyết định tiền và lỗi hãng | |
-| Với mỗi trường then chốt: **nguồn sự thật** hay **bản sao** (ai cập nhật, khi nào)? | |
-| Định dạng cần để ý (ngày, trường được phép trống, đơn nhiều kiện) | |
-| Thế giới thật làm dữ liệu lệch ở đâu (theo mùa, đổi chính sách, giờ cao điểm, người nhập tay)? | |
-| Câu người ngoài sẽ hỏi về nguồn dữ liệu ("sao hệ thống biết đơn trễ mấy ngày?") | |
+| Người dùng | Khách cá nhân gửi ticket qua app (`customers`, `tickets.jsonl`); gián tiếp: trưởng ca CSKH NV-HANH (duyệt ca chuyển sang), kế toán NV-OANH (đối soát với hãng và shop), hãng vận chuyển (`carriers`) nhận lỗi và thông báo |
+| Việc người dùng cần làm xong | Khách: được hoàn phí ship đúng số tiền khi đơn giao trễ, không phải chứng minh lại. NV-OANH: sổ cái và lỗi hãng khớp tracking mỗi tuần. NV-HANH: chỉ nhận những ca thật sự cần người, trong 60 phút |
+| Đầu ra của hệ thống (kể cả các lệnh ghi) | Bốn lệnh ghi: `issue_refund` (dòng sổ cái, người trả, `approval_id`), `file_carrier_fault` (lỗi cho hãng + kiện), `notify_carrier` (thông báo cho hãng), `send_reply` (trả lời khách, có số tiền); hoặc trạng thái `escalated` chuyển người |
+| Dữ liệu trợ lý đọc lúc chạy (bảng nào trong `data/world.json`) | `orders` (kèm `parcels[]`, `recipient`, `warehouse_id`, `shipping_fee_vnd`), `policies`, `approvals`, `ledger_seed` (khoản đã hoàn), `carriers`, `customers`; giới hạn ở `ops_limits`; và chữ khách gõ trong ticket |
+| Trường then chốt quyết định tiền và lỗi hãng | `parcels[].promised_date`, `parcels[].delivered_date` (ra số ngày trễ), `parcels[].delay_cause`, `parcels[].carrier_id`; `policies[].effective_from/effective_to`, `late.min_days_fee`, `auto_limit_vnd`, `fault_causes`; `orders[].shipping_fee_vnd`; `approvals[].status/expires_at/max_vnd/ticket_id` |
+| Với mỗi trường then chốt: **nguồn sự thật** hay **bản sao** (ai cập nhật, khi nào)? | `delivered_date`, `delay_cause`: nguồn sự thật là hệ thống tracking (máy quét điểm phát, tài xế/hãng ghi nguyên nhân). `policies`: nguồn sự thật do Product/Finance ban hành theo ngày hiệu lực. `approvals`: nguồn sự thật do NV-HANH tạo. **Số ngày trễ khách gõ trong ticket chỉ là bản sao do khách tự kể**, không dùng để tính tiền (PRD v1.1 FM-03) |
+| Định dạng cần để ý (ngày, trường được phép trống, đơn nhiều kiện) | Ngày dạng `YYYY-MM-DD`, tính trễ so với `as_of` khi `delivered_date` còn trống (2 kiện `IN_TRANSIT`); `delay_cause` được phép `null` (5 kiện); 1 đơn có 2 kiện, phải chọn đúng kiện bị trễ; `effective_to` = `null` ở chính sách mới nhất; `is_gift` = true thì người nhận khác người đặt |
+| Thế giới thật làm dữ liệu lệch ở đâu (theo mùa, đổi chính sách, giờ cao điểm, người nhập tay)? | Đổi chính sách theo ngày (REFUND-v3 → v4 ngày 2026-12-01); mùa mưa bão miền Trung/miền Tây làm tăng `FORCE_MAJEURE`; cao điểm cuối năm điểm phát quét sót, nhập bù `delivered_date` bằng tay; hãng nhỏ ghi `delay_cause` trống hoặc sai; phê duyệt hết hạn nhưng còn nằm trong bảng |
+| Câu người ngoài sẽ hỏi về nguồn dữ liệu ("sao hệ thống biết đơn trễ mấy ngày?") | "Số ngày trễ lấy từ đâu, nếu khách nói 9 ngày mà tracking ghi 2 ngày thì tin ai?" Trả lời: luôn tin `delivered_date − promised_date` của tracking; "Ai quyết lỗi thuộc hãng?" Trả lời: `delay_cause` trong tracking phải thuộc `fault_causes` của chính sách đang hiệu lực |
 
 **Tóm lại (điền vào chỗ trống):**
-Trợ lý dùng `__________`, `__________`, `__________` để giúp `__________` làm được `__________`.
-Trường mà nếu sai thì tiền hoặc lỗi hãng sai theo: `__________`, `__________`.
-Chúng tôi biết thế giới thật sẽ làm dữ liệu lệch ở: `__________`. Dấu hiệu nhìn thấy sớm nhất: `__________`.
+Trợ lý dùng `orders[].parcels` (tracking), `policies` (chính sách theo ngày), `approvals` để giúp `khách bị giao trễ và CSKH` làm được `hoàn đúng phí ship và ghi lỗi đúng hãng mà không phải xử lý tay`.
+Trường mà nếu sai thì tiền hoặc lỗi hãng sai theo: `parcels[].delivered_date / delay_cause`, `policies[].effective_from / auto_limit_vnd / fault_causes`.
+Chúng tôi biết thế giới thật sẽ làm dữ liệu lệch ở: `ngày đổi chính sách và mùa bão (delay_cause FORCE_MAJEURE tăng)`. Dấu hiệu nhìn thấy sớm nhất: `escalation_rate và số lỗi hãng mỗi ngày đổi đột ngột quanh ngày 2026-12-01`.
 
-**Ví dụ drift trong 3 tháng tới** (lấy từ dòng "thế giới thật làm dữ liệu lệch"): cái gì đổi `____` · đổi ngày nào `____` ·
-trường nào cho thấy `____` · con số nào của Bản tiêu chí bị ảnh hưởng `____`.
-Đây là đầu vào đổi hay quan hệ vào–ra đổi? Chỉ số nào sẽ phát hiện? `__________`
+**Ví dụ drift trong 3 tháng tới** (lấy từ dòng "thế giới thật làm dữ liệu lệch"): cái gì đổi `chính sách REFUND-v3 → REFUND-v4: auto_limit_vnd 200.000đ → 100.000đ, min_days_fee 3 → 2 ngày, FORCE_MAJEURE bỏ khỏi fault_causes (vẫn hoàn cho khách nhưng không ghi lỗi hãng)` · đổi ngày nào `2026-12-01` ·
+trường nào cho thấy `policies[].effective_from`, `policies[].index_active`, `parcels[].delay_cause = FORCE_MAJEURE` · con số nào của Bản tiêu chí bị ảnh hưởng `wrongful_carrier_faults_max` (ghi lỗi hãng cho ca bão lũ), `wrongful_refund_vnd_max` (hoàn tự động 100–200 nghìn mà không có phê duyệt), `escalation_rate_max` (nhiều ca vượt hạn mức mới hơn → chuyển người tăng), `queue_stuck_max`.
+Đây là đầu vào đổi hay quan hệ vào–ra đổi? Chỉ số nào sẽ phát hiện? `Quan hệ vào–ra đổi (concept drift): cùng một đơn trễ, cùng delay_cause, nhưng đầu ra đúng (số tiền, có ghi lỗi hãng hay không) khác đi sau 2026-12-01. Phát hiện bằng: số lỗi hãng có delay_cause = FORCE_MAJEURE mỗi ngày (phải về 0 sau 2026-12-01), tỉ lệ khoản hoàn tự động > auto_limit_vnd của chính sách hiệu lực, và escalation_rate theo ngày.`
 
 **Ví dụ một dòng (đừng chép):** trường then chốt `parcels[].delivered_date` · bản ghi do máy quét ở điểm phát tạo ra, là nguồn
 sự thật về ngày giao · lệch khi điểm phát quét sót hoặc nhập bù bằng tay.
@@ -308,10 +308,10 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 
 | Khoá | Giá trị bàn đặt | Lý do (một câu, có số) |
 |---|---|---|
-| `business.daily_refund_cap_vnd` | | |
-| `business.cost_budget_per_ticket_vnd` | | |
-| `business.pilot_scope` (all / warehouse / percent) | | |
-| `business.roi_min` | | |
+| `business.daily_refund_cap_vnd` | `1400000` | Ngân sách hoàn tự động của Finance là 2.000.000đ/ngày (`ops_limits.daily_auto_refund_budget_vnd`); bàn chừa 600.000đ = 2 × 300.000đ (`max_auto_refund_per_customer_per_day_vnd`), để kể cả có 2 khoản hoàn sai cỡ lớn nhất lọt qua trong ngày thì tổng vẫn không vượt ngân sách Finance. Khoản làm vượt trần được chuyển NV-HANH duyệt |
+| `business.cost_budget_per_ticket_vnd` | `1400` | Trần tiền LLM là 1.500đ/ticket (`ops_limits.max_llm_cost_per_ticket_vnd`); bàn chừa 100đ cho ghi chú giải thích (`ops_facts.llm_cost.decision_note_vnd` = 100đ) để khi Vận hành bật `decision_note` thì không ticket nào vượt trần. Ticket dài (tiền đọc 1đ/4 ký tự) chuyển người |
+| `business.pilot_scope` (all / warehouse / percent) | `{"mode": "all"}` (tạm, xét lại sau lần chạy base) | Vòng 1 chưa có bằng chứng kho nào tệ hơn, nên giữ đủ 4 kho bán lẻ để đo khối "theo kho và hãng". Kho nào có chi phí mỗi ticket > 10.000đ (`ops_facts.manual_cost_per_ticket_vnd`) hoặc tỉ lệ chuyển người > 0,25 thì cắt về làm tay ở quyết định v1/v2 |
+| `business.roi_min` | `0.4` | Khớp `business_ops.roi_min` đã ký: chi phí trần 7.000đ so với làm tay 10.000đ cho ROI ≈ (10.000 − 7.000) / 7.000 = 0,43; thấp hơn 0,4 là pilot không còn rẻ hơn làm tay ít nhất 30% |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
 
