@@ -29,7 +29,7 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | base · base | (baseline, chưa có cổng) | | | | | |
+| 1 | R-base-before-20261119-155220-f6ac62 | base · base | (baseline, chưa có cổng) | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000 · 1 · 0 | 0.2273 | Chưa qua Gate: hoàn sai 20.000đ và có 1 lỗi hãng oan, đều vi phạm ngưỡng bắt buộc. |
 | 2 | | base · after | (cổng vòng 1, thử trước khi chốt) | | | | | |
 | 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
 | 4 | | | | | | | | |
@@ -45,18 +45,18 @@ python3 -m lab10.eval --suite base --stage base --note "baseline"
 python3 -m lab10.gate --run runs/<mã lần chạy>/report.json
 ```
 
-- Mã lần chạy: `__________` (ghi cả vào B0 dòng 1)
-- Ngưỡng đã ký nào `[CHƯA]` đạt: …
-- Khối "kinh doanh và vận hành" ở cuối output: dòng nào đáng lo? …
-- Khối "theo kho và hãng": kho hoặc hãng nào có số xấu nhất? …
+- Mã lần chạy: `R-base-before-20261119-155220-f6ac62` (ghi cả vào B0 dòng 1)
+- Ngưỡng đã ký nào `[CHƯA]` đạt: `wrongful_refund_vnd ≤ 0` (thực tế 20.000đ) và `wrongful_carrier_faults ≤ 0` (thực tế 1).
+- Khối "kinh doanh và vận hành" ở cuối output: đáng lo nhất là hoàn sai ngày tệ nhất 20.000đ; tổng hoàn tự động là 155.000đ/ngày, dưới ngân sách 2.000.000đ nhưng vẫn có thiệt hại hoàn sai.
+- Khối "theo kho và hãng": kho HCM có pass_rate thấp nhất (0.96), hoàn sai 20.000đ và 1 lỗi hãng oan; hãng VNX cũng có hoàn sai 20.000đ và 1 lỗi hãng oan (pass_rate 0.9714).
 
 **Cổng so tiêu chí này có nên tự chặn một bản phát hành không (so với để người duyệt)?**
 
 | Lý lẽ ủng hộ tự chặn | Lý lẽ phản đối |
 |---|---|
-| | |
+| Dùng ngưỡng cứng để chặn phát hành khi có hoàn sai hoặc ghi lỗi oan cho hãng, bảo vệ khách hàng và bên thứ ba; lần chạy này đã chỉ ra vi phạm cụ thể. | Chỉ số tổng thể có thể che khuất lỗi theo ticket/kho/hãng; tự chặn hoàn toàn có thể dừng cả phát hành vì một lỗi đơn lẻ, và ngưỡng hoặc dữ liệu có thể chưa phản ánh đủ bối cảnh. |
 
-Khuyến nghị (khoanh một): **tự chặn · người duyệt · kết hợp**. Vì: …
+Khuyến nghị (khoanh một): tự chặn · người duyệt · **kết hợp**. Vì: kết hợp ngưỡng bắt buộc để chặn khi có hoàn sai hoặc lỗi hãng oan, đồng thời chuyển ca bất định và quyết định ngoại lệ cho người duyệt; không để một điểm tổng hợp tự quyết định thay con người.
 
 ---
 
@@ -81,26 +81,26 @@ Ba loại lỗi:
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | `T-002@55`, dòng 01–02: khách khai trễ 5 ngày nhưng tracking chỉ ghi 2 ngày; dòng 05–06 và sổ cái: vẫn ghi hoàn 20.000đ cho LOGIX. REFUND-v3 yêu cầu trễ ít nhất 3 ngày. | Khách nhận khoản hoàn không đúng chính sách; LogiX chịu khoản chi sai, NV-OANH phải đối soát. | cao | lỗi chìm |
+| 2 | `T-002@55`, dòng 02 và 07–08: tracking ghi trễ 2 ngày nhưng hệ thống ghi lỗi cho VNX với `delay_days: 5` và gửi thông báo; nhãn kết quả ghi `faults: []`. | Hãng VNX chịu lỗi oan; LogiX chịu tranh chấp và mất tin cậy với hãng. | cao | lỗi chìm |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
 | Câu hỏi | Lỗi 1 | Lỗi 2 |
 |---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | |
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | Có — dòng 03 cho thấy `ticket: 5` ghi đè `db: 2`, dù số khách tự khai chưa được xác minh. | Có — cùng lỗi ghi đè khiến lệnh ghi lỗi hãng dùng 5 ngày thay vì số tracking 2 ngày. |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | Không thiếu dữ liệu: tracking có `db_delay_days: 2`; vấn đề là không dùng dữ liệu này làm căn cứ. | Không thiếu dữ liệu: tracking có cả số ngày trễ và `cause: CARRIER`; vấn đề là lấy số ngày khách khai để ghi lỗi. |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | Không có bằng chứng về hai hệ thống cùng ghi; nguồn sự thật tracking đã có. | Không có bằng chứng về hai hệ thống cùng ghi; nguồn sự thật tracking đã có. |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | Không thấy lỗi vận hành; lệnh hoàn chạy thành công nhưng quyết định sai. | Không thấy lỗi vận hành; lệnh ghi lỗi chạy thành công nhưng dữ liệu sai. |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
 | | Lỗi 1 | Lỗi 2 |
 |---|---|---|
-| Vì sao người gặp coi đây là lỗi | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | |
+| Vì sao người gặp coi đây là lỗi | REFUND-v3 chỉ hoàn khi trễ từ 3 ngày; thực tế tracking ghi 2 ngày nhưng LogiX vẫn hoàn 20.000đ. | Hãng VNX bị ghi lỗi với số ngày 5 không khớp tracking 2 ngày; kết quả chuẩn không có lỗi hãng nào. |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | Trao quyền kiểm soát cho người: nếu số khách khai khác tracking, không tự hoàn; chuyển duyệt và đối chiếu chính sách đang hiệu lực. | Trao quyền kiểm soát cho người: chỉ ghi lỗi theo số ngày và nguyên nhân từ tracking; khi có lệch, chuyển duyệt và tạm dừng gửi lỗi cho hãng. |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Ticket bị giữ → NV-HANH đối chiếu tracking với REFUND-v3 → quyết định hoàn/không hoàn → LogiX trả lời khách; nếu đã ghi sổ thì NV-OANH đối soát theo quy trình. | Không gửi lỗi hãng khi dữ liệu lệch → NV-HANH xác minh tracking → chỉ gửi thông báo đã sửa nếu đủ căn cứ → hãng VNX nhận thông tin chính xác. |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Ghi event `model_override`; đề xuất monitor mới `model_override_rate` (tỷ lệ ticket có event này; hiện chưa có trong `monitors.py`) và theo dõi cùng `escalation_rate` hiện có. | Cùng tín hiệu `model_override_rate`; đối chiếu thêm `wrongful_carrier_faults` trong báo cáo đánh giá để xác nhận không còn ghi lỗi oan. |
 
 **Ví dụ (bộ nền, đừng chép):** `T-002@55` · sổ cái có dòng hoàn 20.000đ, hãng VNX nhận một lỗi, trong khi tracking ghi trễ 2 ngày ·
 khách không thấy gì sai, hãng chịu · cao · **lỗi chìm**. Nguồn: đầu vào (đặt sai trọng số cho con số khách tự khai). Xử lý:
