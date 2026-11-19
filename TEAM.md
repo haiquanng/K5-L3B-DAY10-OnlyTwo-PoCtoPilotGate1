@@ -76,7 +76,15 @@ Vận hành và pháp lý, gom bài nộp. Câu 1.2, 1.4, 2.4, 2.10, 3.1 (phần
 - **Câu 2.10:** điền `config/operating_gates.json` mục `operations` (PIC `NV-TUNG`, người duyệt `NV-HANH`, 1 người trực × 6 ca/giờ, chờ tối đa 60 phút, 7 điều kiện dừng, kênh cảnh báo, `decision_note = true`, kiểm mẫu 10%) và `legal` (chặn `recipient_contact`, `customer_note` gửi hãng; bắt buộc có nguyên nhân ghi nhận khi ghi lỗi hãng).
 - **B7.5, B7.6:** runbook phần 1–3 khớp các con số trong config (dừng tối đa 15 phút, NV-TUNG bấm) và mục giờ cao điểm (ước tính tải từ `ops_facts` và lần chạy base).
 
-**Vòng 2** (bổ sung sau khi có thẻ): C3, C4, C5 câu 3.3, câu 3.5 phần `operations`/`legal`, C9, C10, C11 (runbook 4–5), `submission/submission.json`.
+**Vòng 2 · thẻ S4**
+- **C3 (phần riêng của S4 = mục Giờ cao điểm):** bổ sung B7.6 bằng khối **[S4]**: chỉ ra giả định vòng 1 sai (ticket rải đều, 23% chuyển người) so với đêm 11.11 (`peak_hour_review_load` 10 ca/giờ, prepared 10 ca ùn); trả lời lại 5 câu theo số report và quyết định v2: giữ 1 người trực (2 người: chi phí 7.584đ, ROI 0,32), ngày sale thu hẹp về HN + HCM, trần hoàn 300.000đ, ngưỡng `fail_open_rate` khớp C8.
+- **C4:** HAZOP của thẻ trên `issue_refund`, 4 dòng: `fail_open` khi LLM lỗi 60% (cổng vòng 1 đã chặn, hoàn sai 160.000đ → 0đ), người duyệt quá tải (15 ca bắt buộc chuyển người trong phút 215–292), trần ngày sai cho ngày sale (1.400.000đ so với ngân sách 300.000đ), và nhánh chưa thấy trên trace: cờ `refund_status` chỉ cập nhật bằng batch đêm nên có thể hoàn hai lần cho cùng đơn.
+- **Câu 3.3 (C5):** giả định môi trường: CSKH làm tay luôn đủ người nhận phần bị cắt (DN, CT: 18/41 ticket) trong 60 phút; report không đo hàng chờ này.
+- **Câu 3.5 (`operations`, `legal`):** giữ nguyên bản vòng 1. Hai khoá `legal` đã chặn ghi lỗi hãng ở đơn `MERCHANT_HANDOVER` ngay từ mốc prepared; thêm người trực bị loại vì vi phạm `cost_per_ticket_vnd_max` và `roi_min` đã ký (phần sửa phạm vi và trần thuộc khối `business` của Quân).
+- **C9:** fault tree sau khi sửa (`R-S4-after-20261119-164007-d1ada5`): nhánh [1] NGĂN (hai lớp chặn độc lập), [2] GIẢM (10 → 0 ca ùn, chờ 128 → 40 phút), [3] NGĂN khi trần đúng; ghi nhánh còn hở.
+- **C10:** risk register 3 dòng (sale đông hơn gói thử, LLM nghẽn kéo dài, CSKH làm tay quá tải), mỗi dòng một PIC và một chỉ số dấu hiệu.
+- **C11:** cập nhật checklist 7 nhóm việc (cột PIC), Runbook 4 (7 câu sau sự cố) và Runbook 5 (3 kịch bản "nếu … thì …").
+- **`submission/submission.json`:** `incident` S4, `decision_v1` Tiếp tục, `decision_v2` Thu hẹp, ba dòng bắt buộc chép nguyên văn từ C12.
 
 ### Bằng chứng
 
@@ -89,9 +97,16 @@ Các commit có tiền tố `[Nguyen]` (tác giả git hiển thị mã trưởn
 | `5fb4a7e` | Câu 2.10: `config/operating_gates.json` mục `operations`, `legal` |
 | `69cbf63` | Phiếu B mục B7.5 (runbook 1–3), B7.6 (giờ cao điểm) |
 | `e8b4fd8` | Phiếu B mục B5 dòng 1: bằng chứng lần chạy base |
+| `2e1e153` | TEAM.md: mục cá nhân, đóng góp vòng 1 |
+| `7b2b424` | Thẻ S4: Phiếu C mục C4 (HAZOP của thẻ), Phiếu B mục B7.6 bổ sung [S4] |
+| `41ae3f2` | Thẻ S4: Phiếu C câu 3.3, C9, C10, C11 (checklist, runbook 4–5); B7.6 [S4] khớp ngưỡng `fail_open_rate` với C8 |
+| `77db700` | `submission/submission.json`: thẻ S4, quyết định v1/v2, ba dòng bắt buộc |
 
-Lần chạy dùng làm bằng chứng: `R-base-before-20261119-155220-f6ac62` (B5 dòng 1, B7.6).
+Lần chạy dùng làm bằng chứng: `R-base-before-20261119-155220-f6ac62` (B5 dòng 1, B7.6); thẻ S4: prepared `R-S4-prepared-20261119-163417-3c7277`, after `R-S4-after-20261119-164007-d1ada5`, grade `R-S4-grade-20261119-164007-d1ada5` (B7.6 [S4], C4, C9, C11).
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc. *(viết cuối buổi)*
+Một điều học được, một điều còn chưa chắc.
+
+- Học được: Sửa lỗi ở một nơi có thể làm lỗi chỗ khác.
+- Chưa chắc: Ngưỡng trong runbook nên chọn thế nào?
