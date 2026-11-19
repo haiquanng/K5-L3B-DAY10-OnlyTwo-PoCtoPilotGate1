@@ -50,15 +50,25 @@ Kỹ sư cổng, giữ máy chạy chính (eval, gate, checkpoint, grade, check_
 
 ### Đóng góp cụ thể
 
-...
+**Vòng 1**
+- **Câu 1.3 (Phiếu A, A2):** đề xuất cổng cho hành vi agent; ghi thước đo, dữ liệu, cách tính và điểm mù để Quân điền cột đối chiếu.
+- **Câu 2.1–2.2 (Phiếu B, B0–B2):** chạy mốc base, gate và trace ticket T-002 seed 55; ghi mã lần chạy, kết quả và nhận định vào phiếu.
+- **Câu 2.6–2.8 (Phiếu B, B7.1–B7.3):** triển khai các kiểm tra trong `guards.py`, nêu biện pháp hạn chế rò rỉ dữ liệu và chạy hai ticket hiếm bằng `trace --adhoc` để lưu cho demo.
+
+**Vòng 2 · thẻ S4**
+- **Câu 3.5:** sửa `write_gate` để từ chối ghi lỗi hãng khi tracking không xác nhận lỗi thuộc hãng; giữ kiểm tra số tiền hoàn theo tracking và chính sách.
+- **Câu 3.6 (Phiếu C, C8):** thêm `fail_open_rate` và `peak_hour_review_load` vào `MONITORS`; ghi dữ liệu đầu vào, cách tính, ngưỡng cảnh báo và điểm mù.
+- Phối hợp Quân đối chiếu trace và bảng soát lỗi C2; phần C2 và hàng C7 được phân công lại cho Quân.
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+- Commit `f69bac8`: cổng và kiểm tra vòng 1 cho câu 2.6–2.7.
+- Phiếu C, mục C7–C8: các mã chạy S4 after và grade, cùng số liệu monitor. Lần chạy after mới nhất: `R-S4-after-20261119-165501-482cc8`; cần dùng report grade mới nhất để xác nhận `monitor` và `regression` sau thay đổi này.
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+- **Học được:** cổng ghi ở ngoài model có thể kiểm tra lại dữ kiện nguồn trước khi ghi, còn monitor giúp phát hiện tải vận hành tăng mà không cần dựa vào nhãn đúng/sai.
+- **Còn chưa chắc:** ngưỡng cảnh báo tải giờ cao điểm và `fail_open_rate` có phù hợp với pilot thật hay cần hiệu chỉnh theo dữ liệu vận hành thực tế.
 
 ## NguyenLuongNguyen-2A202604005
 
