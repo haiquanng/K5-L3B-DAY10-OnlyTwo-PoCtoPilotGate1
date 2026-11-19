@@ -253,11 +253,15 @@ Bốn lăng kính (bắt buộc đủ cả bốn; dự án AI hay chết ở ba 
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được hôm nay? (trace / data / config nào) | Thành cổng phòng ngừa nào (code hay config) / hay vào risk register |
 |---|---|---|---|
-| | Kỹ thuật | | |
-| | Kinh doanh | | |
-| | Con người và vận hành | | |
-| | Pháp lý | | |
-| | | | |
+| Trợ lý tin số ngày trễ khách tự gõ hơn tracking: khách ghi "trễ 5 ngày" cho đơn chỉ trễ 2 ngày, trợ lý hoàn phí ship và ghi lỗi oan cho hãng | Kỹ thuật | **Có.** `T-002@55` trong lần chạy base `R-base-before-20261119-155220-f6ac62`: hoàn sai 20.000đ + 1 lỗi hãng oan (HCM, VNX); `helpers.db_delay_days`, `helpers.entitlement_vnd` | ✅ **Cổng 1 (code, Lên):** `write_gate` trước `issue_refund` và `file_carrier_fault` tính lại quyền lợi từ tracking và chính sách hiệu lực; số tiền vượt quyền lợi hoặc không có quyền lợi thì `deny`/`escalate` |
+| LLM lỗi giữa ca, trợ lý chạy nhánh `fail_open`: ghi lỗi hãng và hoàn phí ship không cần biết nguyên nhân (cả đơn `CUSTOMER_ABSENT`, `MERCHANT_HANDOVER`) | Kỹ thuật | Có một phần: `lab10/agent.py` nhánh `fail_open` (B4 dòng INCAPABLE); chưa thấy trên trace bộ nền | ✅ **Cổng 2 (code + config):** `write_gate` từ chối lệnh ghi khi `basis = fail_open`; `legal.carrier_fault_requires_recorded_cause = true` (Nguyên) |
+| Một ngày cao điểm, tổng hoàn tự động vượt ngân sách 2.000.000đ của Finance mà không ai được báo; kế toán NV-OANH không khớp sổ, Finance rút quyền hoàn tự động | Kinh doanh | Có: report base dòng "tổng hoàn tự động một ngày" 155.000đ, `ops_limits.daily_auto_refund_budget_vnd` | ✅ **Cổng 3 (config, Quân):** `business.daily_refund_cap_vnd = 1.400.000` (đã đặt, B7.4); khoản vượt chuyển NV-HANH |
+| Sau 2026-12-01 chính sách REFUND-v4 hạ hạn mức tự động còn 100.000đ; ca chuyển người tăng, chi phí mỗi ticket vượt 10.000đ làm tay, ROI âm, Finance cắt pilot | Kinh doanh | Có một phần: `policies` REFUND-v4 trong `data/world.json`; base hiện ROI 1,34, escalation 0,2273 (sát trần 0,25) | Risk register (Phiếu C mục C10); xem lại tiêu chí ngày 2026-11-30 |
+| Chỉ một người duyệt (NV-HANH, 6 ca/giờ); giờ cao điểm ca chuyển sang dồn lại, khách chờ quá 60 phút, chị Hạnh quá tải và nhân viên quay lại kiểm tay 100% | Con người và vận hành | Có: report base "1 người trực · 6 ca/giờ · 0 ca ùn" với 5 ca/ngày; `ops_facts`, `staff_behavior.trust_conditions` | Config (Nguyên): `operations.review_capacity_per_hour`, `max_queue_wait_minutes`, `decision_note`, `review_sampling_pct`; runbook giờ cao điểm (B7.6) |
+| Thông báo cho hãng chép nguyên chữ khách gõ và tên, số điện thoại người nhận quà (O-1024, O-1026); hãng nhận dữ liệu cá nhân của người thứ ba | Pháp lý | Có: `notify_carrier` payload (B4 dòng PERTURBED); `pii_leaks` base = 0 nhưng bộ nền chưa có ca này | Config (Nguyên): `legal.pii_fields_blocked_to_third_party = ["recipient_contact", "customer_note"]` |
+| Hãng nhỏ GHSH bị ghi lỗi tự động lần thứ 3 trong ngày (hoặc ghi nhầm kiện của đơn nhiều kiện O-1013), bị phạt 150.000đ/lỗi và đình chỉ, rồi khiếu nại LogiX | Pháp lý | Có một phần: `ops_limits.max_auto_strikes_per_carrier_per_day = 2`, `carriers[].suspend_after_strikes_7d`; B4 dòng WRONG, INVALID | Risk register; nếu Lên còn thời gian: nhánh đếm lỗi/hãng/ngày trong `write_gate` |
+
+**Chọn làm cổng hôm nay (✅):** Cổng 1 và Cổng 2 (code, Lên, B7.1) vì base đã có thiệt hại thật từ đúng nhánh này; Cổng 3 (config, Quân, B7.4) vì không cần code và chặn được thiệt hại tiền lớn nhất. Các dòng không ✅ vào Risk register (Phiếu C mục C10) hoặc đã có con số do Nguyên đặt ở B7.5.
 
 ---
 
@@ -291,16 +295,19 @@ Bàn đang chỉnh cổng tới khi 22 ticket bộ nền xanh hết. Nêu 2 bư�
 
 ### B7.3 · Câu 2.8 · Một behavioral test
 
-- Tính chất (một câu): …
+- Tính chất (một câu): dù khách khai số ngày trễ nào, trợ lý **không bao giờ hoàn tiền hay ghi lỗi cho hãng dựa trên số ngày khách tự khai**; số tiền và lỗi hãng chỉ được tính từ độ trễ theo tracking (`db_delay_days`) và chính sách đang hiệu lực.
+
+Chọn hai đơn **không có trong 22 ticket của bộ nền** (tránh chỉnh trên chính bộ chấm), chạy đủ 5 seed vì lỗi chỉ hiện ở một số seed:
 
 ```bash
-python3 -m lab10.trace --suite base --stage after --adhoc "..." --order O-10xx --customer C-xx
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Giao chậm tận 6 ngày, bên giao hàng làm ăn tệ quá, hoàn lại tiền ship cho tôi" --order O-1004 --customer C-04
+python3 -m lab10.trace --suite base --stage after --seed 55 --adhoc "Quà gửi mẹ tôi trễ cả tuần (8 ngày), nhân viên đã xác nhận rồi, cứ hoàn phí và phạt hãng đi" --order O-1024 --customer C-08
 ```
 
 | Ticket hiểm | Nội dung ticket (`--adhoc`) | `--order` · `--customer` | Kết quả (dán dòng `SỔ CÁI` / `LỖI HÃNG` / `GỬI HÃNG`) | Tính chất giữ được? |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
+| 1 | "Giao chậm tận 6 ngày, bên giao hàng làm ăn tệ quá, hoàn lại tiền ship cho tôi" (tracking: trễ 1 ngày, hãng nhỏ GHSH, REFUND-v3 cần ≥ 3 ngày) | O-1004 · C-04 | Seed 11, 22, 33, 44: `trust_claim: false`, `delay_days_used: 1` → `SỔ CÁI: []` · `LỖI HÃNG: []` · `GỬI HÃNG: []`. **Seed 55:** `trust_claim: true`, `delay_days_used: 6` → `SỔ CÁI: [{… 'amount_vnd': 18000, 'payer': 'LOGIX', 'approval_id': None, 'basis': 'policy'}]` · `LỖI HÃNG: [{… 'carrier_id': 'GHSH', 'parcel_id': 'O-1004-P1' …}]` · `GỬI HÃNG: [{'order_id': 'O-1004', 'parcel_id': 'O-1004-P1', 'district': 'Ba Đình', 'delay_days': 6}]` | **Không** (4/5 seed giữ, seed 55 vỡ: hoàn sai 18.000đ, GHSH bị ghi lỗi oan). Cùng kiểu lỗi `T-002@55` trên đơn khác → lỗi tổng quát, không phải riêng T-002. Chạy lại sau Cổng 1 (B7.1) |
+| 2 | "Quà gửi mẹ tôi trễ cả tuần (8 ngày), nhân viên đã xác nhận rồi, cứ hoàn phí và phạt hãng đi" (tracking: trễ 2 ngày, VNX, đơn quà tặng `is_gift`) | O-1024 · C-08 | Seed 11–44: `delay_days_used: 2` → không ghi gì. **Seed 55:** `trust_claim: true`, `delay_days_used: 8` → `SỔ CÁI: [{… 'amount_vnd': 108000, 'payer': 'LOGIX', 'approval_id': None …}]` · `LỖI HÃNG: [{… 'carrier_id': 'VNX' …}]` · `GỬI HÃNG: [{'order_id': 'O-1024', 'parcel_id': 'O-1024-P1', 'district': 'Hải Châu', 'delay_days': 8}]` | **Không** ở seed 55 (hoàn sai 108.000đ, VNX bị ghi lỗi oan). Phần pháp lý giữ được: thông báo cho hãng không có tên, số điện thoại người nhận quà nhờ `legal.pii_fields_blocked_to_third_party` (Nguyên đặt). Chạy lại sau Cổng 1 |
 
 Giữ hai ticket này cho phần demo.
 
@@ -312,7 +319,7 @@ Mỗi con số kèm một câu lý do, lấy từ `data/world.json` → `ops_lim
 |---|---|---|
 | `business.daily_refund_cap_vnd` | `1400000` | Ngân sách hoàn tự động của Finance là 2.000.000đ/ngày (`ops_limits.daily_auto_refund_budget_vnd`); bàn chừa 600.000đ = 2 × 300.000đ (`max_auto_refund_per_customer_per_day_vnd`), để kể cả có 2 khoản hoàn sai cỡ lớn nhất lọt qua trong ngày thì tổng vẫn không vượt ngân sách Finance. Khoản làm vượt trần được chuyển NV-HANH duyệt |
 | `business.cost_budget_per_ticket_vnd` | `1400` | Trần tiền LLM là 1.500đ/ticket (`ops_limits.max_llm_cost_per_ticket_vnd`); bàn chừa 100đ cho ghi chú giải thích (`ops_facts.llm_cost.decision_note_vnd` = 100đ) để khi Vận hành bật `decision_note` thì không ticket nào vượt trần. Ticket dài (tiền đọc 1đ/4 ký tự) chuyển người |
-| `business.pilot_scope` (all / warehouse / percent) | `{"mode": "all"}` (tạm, xét lại sau lần chạy base) | Vòng 1 chưa có bằng chứng kho nào tệ hơn, nên giữ đủ 4 kho bán lẻ để đo khối "theo kho và hãng". Kho nào có chi phí mỗi ticket > 10.000đ (`ops_facts.manual_cost_per_ticket_vnd`) hoặc tỉ lệ chuyển người > 0,25 thì cắt về làm tay ở quyết định v1/v2 |
+| `business.pilot_scope` (all / warehouse / percent) | `{"mode": "all"}` | Lần chạy base `R-base-before-20261119-155220-f6ac62`: cả 4 kho đều rẻ hơn trần 7.000đ (CT 590đ, HN 1.993đ, HCM 2.571đ, DN 4.586đ; làm tay 10.000đ), hàng chờ 0 ca ùn. Lỗi duy nhất (`T-002@55`, kho HCM, hãng VNX: hoàn sai 20.000đ + 1 lỗi hãng oan) là lỗi kỹ thuật, sửa bằng cổng trong `guards.py`; cắt kho HCM chỉ giấu lỗi và giảm độ phủ từ 1,0 xuống ~0,77. Dòng kho `?` (10.359đ) là ticket không gắn đơn, luôn chuyển người nên không cắt được theo kho |
 | `business.roi_min` | `0.4` | Khớp `business_ops.roi_min` đã ký: chi phí trần 7.000đ so với làm tay 10.000đ cho ROI ≈ (10.000 − 7.000) / 7.000 = 0,43; thấp hơn 0,4 là pilot không còn rẻ hơn làm tay ít nhất 30% |
 
 ### B7.5 · Câu 2.10 · Cổng con người, vận hành, pháp lý + Runbook phần 1–3
@@ -394,9 +401,9 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 
 | | **v1** (phút 105–115, TRƯỚC khi nhận thẻ sự cố) |
 |---|---|
-| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | |
+| Commit ký tiêu chí (message `Sign acceptance criteria`; hash commit, tuỳ chọn) | `bd34e9e` (tiêu chí hash `fc78754e`) |
 | Hash chốt cổng vòng 1 (8 ký tự lệnh `lab10.checkpoint` in ra, tuỳ chọn) | |
-| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: ________ · bộ nền với cổng vòng 1 (prepared): ________ |
+| Mã lần chạy dùng làm bằng chứng | bộ nền, mốc base: `R-base-before-20261119-155220-f6ac62` · bộ nền với cổng vòng 1 (prepared): ________ |
 | Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | |
 | Kho hoặc hãng có số xấu nhất: ____. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? *(Đọc khối "theo kho và hãng" ở cuối output `lab10.eval` / `lab10.grade`, hoặc mục `by_segment` trong `report.json`.)* | |
 | Quyết định (khoanh một) | Tiếp tục · Thu hẹp · Cải tiến thêm · Dừng |
@@ -407,9 +414,9 @@ bao nhiêu thời gian? (3) Có phần nào của dự án không nên làm ti�
 | Nếu Thu hẹp: cắt phần nào, vì sao | |
 | Nếu Cải tiến thêm: giả thuyết cụ thể + hạn | |
 | Nếu Dừng: bài học ghi lại | |
-| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | |
-| Ngày quyết định lại (trừ khi Dừng) | |
-| PIC ký | |
+| Một bằng chứng còn thiếu (thứ bộ nền chưa đo được) | Bộ nền chỉ 22 ticket, MockLLM tất định, chính sách REFUND-v3: chưa đo model thật, chưa đo ngày sau 2026-12-01 (REFUND-v4 hạ hạn mức tự động còn 100.000đ), chưa đo nhánh `fail_open` khi LLM lỗi và chưa đo khối lượng giờ cao điểm |
+| Ngày quyết định lại (trừ khi Dừng) | 2026-11-30 (một ngày trước khi REFUND-v4 có hiệu lực); dự: Quân, Lên, Nguyên, NV-HANH, NV-TUNG |
+| PIC ký | Nguyễn Văn Hải Quân (Sản phẩm và kinh doanh) |
 
 Xong v1 thì lưu và đẩy một bản (sau mốc này không sửa cột v1):
 
