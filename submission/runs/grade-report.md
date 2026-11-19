@@ -1,17 +1,17 @@
-# Tự kiểm tra sự cố S4 · FAIL
+# Tự kiểm tra sự cố S4 · PASS-VISIBLE (chưa chạy test ẩn)
 
 *Đây là kết quả TỰ KIỂM TRA của bàn, không phải điểm. Bài được một team chấm tự động chấm lại sau buổi học.*
 
-- Mã lần chạy: `R-S4-grade-20261119-165500-482cc8` · bàn: `K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1` · grader `lab10-1.0` · 1.175s
-- Ba mốc: base `R-S4-before-20261119-165501-482cc8` · prepared `R-S4-prepared-20261119-165501-482cc8` · after `R-S4-after-20261119-165501-482cc8` (report + trace trong runs/)
+- Mã lần chạy: `R-S4-grade-20261119-171602-d1ada5` · bàn: `K5-L3B-DAY10-OnlyTwo-PoCtoPilotGate1` · grader `lab10-1.0` · 0.222s
+- Ba mốc: base `R-S4-before-20261119-171602-d1ada5` · prepared `R-S4-prepared-20261119-171602-d1ada5` · after `R-S4-after-20261119-171602-d1ada5` (report + trace trong runs/)
 - Mốc prepared (cổng vòng 1): đã chốt `f4c270e2`, còn nguyên
-- Hash code đội (guards + monitors + switches + cổng vận hành): `482cc82c3ceb`
+- Hash code đội (guards + monitors + switches + cổng vận hành): `d1ada57c9a2d`
 - Hash Bản tiêu chí chấp nhận: `fc78754e128d` · đã ký: `fc78754e128d` · KHÔNG ĐỔI
 - Thẻ đang kiểm: `S4` · dòng "Thẻ đã bốc" bàn ghi trong phiếu: S4 · khớp
 
 | Kiểm | Kết quả | Chi tiết |
 |---|---|---|
-| 1 integrity | ❌ | file khoá bị đổi: ['data/tickets.jsonl', 'data/world.json', 'incidents/S4/card.json', 'incidents/S4/card.md', 'incidents/S4/tickets.jsonl', 'incidents/S4/world_patch.json', 'lab10/__init__.py', 'lab10/_gradectx.py', 'lab10/_noop_guards.py', 'lab10/agent.py', 'lab10/check_submission.py', 'lab10/checkpoint.py', 'lab10/criteria.py', 'lab10/eval.py', 'lab10/gate.py', 'lab10/grade.py', 'lab10/helpers.py', 'lab10/mock_llm.py', 'lab10/ops.py', 'lab10/tools.py', 'lab10/trace.py', 'lab10/world.py', 'tests/test_public.py'] |
+| 1 integrity | ✅ | file khoá bị đổi: không |
 | 2 criteria | ✅ | đã ký, còn nguyên |
 | 3 visible | ✅ | base có vấn đề: True; after sạch: True; ticket còn hỏng: không; trần còn vượt: không |
 | 4 hidden | — | máy này không có bài kiểm tra ẩn (team chấm sẽ chạy sau buổi học) |

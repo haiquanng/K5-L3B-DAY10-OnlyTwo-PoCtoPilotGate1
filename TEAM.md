@@ -32,15 +32,30 @@ Sản phẩm và kinh doanh, trưởng nhóm, chủ PRD v1.1 dùng chung. Câu 1
 
 ### Đóng góp cụ thể
 
-...
+**Vòng 1 (Sản phẩm và kinh doanh, trưởng nhóm)**
+- Tạo repo, chia vai và quy tắc chống conflict (`tasks/`), đưa PRD v1.1 và eval card Lab 9 vào làm bản chung.
+- Phiếu A: câu 1.1, 1.5, 1.6 (câu tiêu chí, ranh giới đầu ra, bốn câu soát), A5; soạn `config/acceptance_criteria.json` (ngưỡng và `decision_rule`).
+- Phiếu B: B3 (bản đồ dữ liệu, drift REFUND-v3 → v4), B6 (pre-mortem bốn lăng kính, chọn 3 cổng), B7.3 (behavioral test với 2 ticket ngoài bộ nền, phát hiện lỗi ở seed 55), B7.4 + khối `business` (trần hoàn ngày, ngân sách mỗi ticket, phạm vi, ROI), B8 (quyết định v1: Tiếp tục).
+- Sửa sự cố hash khi tiêu chí được ký trên máy Windows (CRLF) bằng `.gitattributes`; chạy `checkpoint` trên máy LF để bản chốt vòng 1 khớp hash.
+
+**Vòng 2 (thẻ S4, nhận thêm phần chạy đo của Kỹ sư cổng)**
+- Kéo thẻ S4, kiểm hash 4 file với `MANIFEST`, chạy `grade` mốc prepared.
+- Phiếu C: C0, C1, C2 (soát lỗi `S4-02@11` base/prepared), C5 câu 3.2, C6 (fault tree trước), C7, C8, C12 (quyết định v2: Thu hẹp, ba dòng bắt buộc).
+- Sửa vòng 2, mỗi lần một thứ: `guards.py` (ghi lỗi hãng sai → `deny` thay vì `escalate`), `business.daily_refund_cap_vnd` 1.400.000 → 300.000, `pilot_scope` → kho HN + HCM; thêm monitor `fail_open_rate`, `peak_hour_review_load`. Thử và loại phương án 2–3 người trực (ROI < 0,4).
+- Gộp nhật ký `runs/` của hai máy, chạy `grade` và `check_submission --collect` tới `ĐỦ THÀNH PHẦN`.
+
+**Dùng AI:** dùng Claude Code để đọc code lab, gợi ý và chạy thử cổng/monitor vòng 2, soát câu chữ phiếu và chạy các lệnh đo. Các ngưỡng, con số trong config và hai quyết định v1/v2 do bàn chốt; mình giải thích được lý do từng số (ghi ở Phiếu A mục A4, B7.4, C7).
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+- Commit: `cc8d85d` (Phiếu A, B3, B7.4, nháp tiêu chí) · `8ffac96` (sửa CRLF tiêu chí) · `a1f1954` (A5) · `7d39602` (B6, B7.3, B7.4) · `aec5d81` (chốt vòng 1 `f4c270e2`) · `56fcc87` (nhận thẻ S4) · `dcd1d04` (B8) · `7b0a79b`, `1fd134b`, `dea412e` (Phiếu C) · `ee5c1ae` (sửa vòng 2 + monitor).
+- Lần chạy: `R-base-prepared-20261119-163352-3c7277` (v1, mọi ngưỡng đạt) · `R-S4-after-20261119-163830-8ae87d`, `R-S4-after-20261119-163839-8abc69`, `R-S4-after-20261119-163939-bb79b2` (ba lần sửa) · grade cuối PASS-VISIBLE (xem `submission/runs/grade-report.md`).
+- Phiếu: A mục A1 (1.1), A3, A4, A5 · B mục B3, B6, B7.3, B7.4, B8 · C mục C0, C1, C2, C5 (3.2), C6, C7, C8, C12.
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+- **Học được:** cổng an toàn đặt ngoài model có thể đỡ trọn tác hại (lỗi hãng oan 27 → 0) nhưng lại đẩy gánh nặng sang người duyệt (ca ùn 4 → 10); Gate 1 phải đo cả tiền, người và ROI, và quyết định phải bám tiêu chí đã ký chứ không bám cảm giác.
+- **Còn chưa chắc:** cổng của bàn tin hoàn toàn vào tracking; nếu ngày sale tracking ghi sai `delay_cause` hoặc tỉ lệ LLM lỗi thật khác 60% của mock thì kết quả "0 ca ùn" ở HN + HCM có còn giữ được không, phải đo lại trong pilot thật.
 
 ## NguyenVanLen-2A202604007
 
