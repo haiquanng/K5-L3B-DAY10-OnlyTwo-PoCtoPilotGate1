@@ -235,13 +235,14 @@ Mở lại Phiếu B mục B3. Ghi ở đây những dòng đổi so với vòng
 
 *Mục riêng, không ghi đè HAZOP vòng 1 ở Phiếu B mục B4. Năm guideword và nghĩa của chúng: xem Phiếu B mục B4.*
 
-Tool chọn phân tích: `________________`
+Tool chọn phân tích: **`issue_refund`** (cùng hàng chờ người duyệt mà lệnh này đẩy sang khi bị chặn). HAZOP vòng 1 (Phiếu B mục B4) đã làm `file_carrier_fault`; thẻ S4 gây hại chính ở tiền hoàn và hàng chờ.
 
 | Tham số / dòng dữ liệu | Guideword (WRONG / INVALID / INCOMPLETE / PERTURBED / INCAPABLE) | Lệch cụ thể (mã ticket, trường dữ liệu của thẻ) | Hậu quả, cho ai | Hiện có gì ngăn? | Gate đề xuất + tầng |
 |---|---|---|---|---|---|
-| | | | | | |
-| | | | | | |
-| | | | | | |
+| `amount_vnd`, `basis` | INCAPABLE | `llm_faults.rate_pct = 60` ở `policy_check`: thử lại cũng lỗi thì agent đi nhánh `fail_open` (`basis = "fail_open"`), hoàn nguyên phí ship không cần biết đủ điều kiện. Ticket "trễ một chút" (`S4-05`, `S4-11`, `S4-23`, `S4-30`, nhãn `denied`) bị hoàn ở seed LLM lỗi hai lần; `S4-08` đạt ở seed này, hỏng ở seed khác. `fail_open_rate` = 0,2435 | LogiX hoàn oan; base: hoàn sai 160.000đ | **Có:** cổng vòng 1 tính lại số tiền từ tracking và chính sách, không dựa vào LLM → prepared hoàn sai 0đ | Giữ cổng (**chặn**); monitor `fail_open_rate` (**phát hiện**), > 0,3 thì báo kênh theo runbook B7.6 [S4] |
+| Người duyệt (công suất hàng chờ) | INCAPABLE | 15 ca bắt buộc chuyển người (`S4-06`, `S4-07`, `S4-09`, `S4-10`, … `S4-33`) tới trong phút 215–292; 1 người × 6 ca/giờ; `peak_hour_review_load` = 10 ca/giờ | Prepared: 10 ca ùn; đủ 4 kho sau sửa vẫn 8 ca ùn, chờ 106 phút; vi phạm `queue_stuck_max = 0`; khách hàng vỡ chờ lâu | `max_queue_wait_minutes = 60` chỉ để report báo vượt trần, không giảm tải | Config `business.pilot_scope = warehouse [HN, HCM]` ngày sale (**giới hạn thiệt hại**: 0 ca ùn, chờ 40 phút); monitor `peak_hour_review_load` > 6 thì thu hẹp tiếp (**phát hiện**). Thêm người bị loại vì ROI 0,32 < 0,4 |
+| Tổng hoàn tự động trong ngày | INVALID | Trần bàn đặt vòng 1 `daily_refund_cap_vnd = 1.400.000` theo ngân sách ngày thường; ngày 11.11 Finance chốt riêng **300.000đ** (`world_patch.ops_limits.daily_auto_refund_budget_vnd`). Prepared: tổng hoàn 422.000đ | Vượt ngân sách Finance mà máy không chặn; NV-OANH chỉ phát hiện khi đối soát | Cổng host `daily_refund_cap_vnd` có, nhưng con số sai cho ngày sale | Config `daily_refund_cap_vnd = 300.000` (**chặn**: 292.000đ ≤ 300.000đ); runbook: ngày sale đọc ngân sách Finance riêng trước 20h |
+| `refund_status` của đơn (cờ "đã hoàn") | INVALID | **Nhánh chưa thấy trên trace:** cờ `refund_status = REFUNDED` chỉ cập nhật bằng batch đêm (`lab10/agent.py`, bước 2). Cả 11.11 là một ngày trên cùng sổ cái: khách gửi lại ticket thứ hai cho cùng đơn trong đêm sale thì cờ vẫn `NONE` | Hoàn phí ship hai lần cho cùng đơn; host chỉ chặn khi vượt tổng tiền đơn | Chỉ có luật host "không vượt tổng tiền đơn" | `write_gate`: trước `issue_refund`, tra sổ cái `ledger_rows(order_id=…)` trong ngày, đã có dòng hoàn thì `deny` (**chặn**) |
 
 Bắt buộc: ít nhất ba dòng, trong đó **một dòng là nhánh bàn chưa thấy trên trace** lúc viết.
 

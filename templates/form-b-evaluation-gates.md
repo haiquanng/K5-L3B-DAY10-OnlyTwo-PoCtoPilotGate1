@@ -382,6 +382,19 @@ Số tính từ `ops_facts` và lần chạy base `R-base-before-20261119-155220
 | Ngưỡng nào thì **thu hẹp** hoặc **tắt**? Ai quyết? | **Thu hẹp** (`business.pilot_scope` về 1 kho, hoặc `percent` 50) khi có ca chờ **> 60 phút**, hoặc ≥ 1 ca bị ùn, hoặc **> 6 ca/giờ** chuyển sang 2 giờ liền dù đã thêm người. **Tắt** `issue_refund` khi LLM lỗi hàng loạt làm trợ lý rơi vào `fail_open`. **NV-TUNG** quyết |
 | Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào? | Mỗi người thêm tốn **30.000đ/ca** phí giữ chỗ (`reviewer_standby_fee_vnd`): ngày thường 22 ticket → **+≈ 1.360đ/ticket**; ngày cao điểm ~66 ticket → **+≈ 450đ/ticket**. ROI giảm tương ứng; chỉ thêm người trong ngày cao điểm, không giữ cố định. Số thật đọc ở report dòng "chi phí mỗi ticket" và "ROI" sau khi chạy `eval` với config 2 người |
 
+**[S4] Bổ sung sau sự cố đêm 11.11 (vòng 2, bút khác màu).** Ước tính vòng 1 ("cao điểm ≈ 8 ticket/giờ, 1 người đủ") **sai**:
+vòng 1 giả định ticket rải đều cả ca và tỉ lệ chuyển người 23% như ngày thường. Gói S4: 30/41 ticket dồn vào phút 215–298
+(≈ 85 phút), một nửa là vỡ/thất lạc bắt buộc chuyển người; monitor `peak_hour_review_load` = **10 ca/giờ** (gần gấp đôi sức
+6 ca/giờ). Mốc prepared: **10 ca ùn**, tỉ lệ chuyển người 0,4976 (`R-S4-prepared-20261119-163417-3c7277`).
+
+| Câu hỏi | [S4] Trả lời bổ sung (khớp config vòng 2 và quyết định v2 Thu hẹp) |
+|---|---|
+| Giờ cao điểm là khi nào, bao nhiêu ticket mỗi giờ? | **Ngày sale (11.11, 12.12…), khoảng 20h–21h30:** ≈ 21 ticket/giờ, trong đó ≈ 10 ca/giờ phải vào hàng chờ (`peak_hour_review_load` = 10). Biết trước theo lịch sale, không đợi hàng chờ ùn mới phản ứng |
+| Ai trực giờ cao điểm, mấy người? | **Vẫn 1 người: NV-HANH** (`reviewers_on_shift = 1`, `review_capacity_per_hour = 6`). Đã thử 2 người ở đủ 4 kho: hết ùn nhưng chi phí 7.584đ/ticket > 7.000đ và ROI 0,32 < 0,4 đã ký, nên **không** xếp người thứ hai cố định. NV-TUNG trực kênh `#logix-refund-pilot-alert` |
+| Ngưỡng nào thì **gọi thêm người**? Ai gọi? | Ngày sale, trong phạm vi HN + HCM: hàng chờ ≥ 4 ca hoặc chờ lâu nhất > 30 phút → **NV-HANH** báo kênh, **NV-TUNG** gọi 1 người CSKH làm tay hỗ trợ **tạm thời** (tính giờ, không phải người trực pilot cố định) và báo Quân xem lại ROI ngày hôm đó |
+| Ngưỡng nào thì **thu hẹp** hoặc **tắt**? Ai quyết? | **Ngày sale mặc định thu hẹp** về kho HN + HCM (`business.pilot_scope = warehouse [HN, HCM]`): 0 ca ùn, chờ lâu nhất 40 phút, ROI 0,74 (`R-S4-after-20261119-164006-d1ada5`); ticket DN, CT về CSKH làm tay. **Thu hẹp tiếp** (`pilot_scope.mode = percent`) khi `peak_hour_review_load` > 6 ca/giờ hoặc vẫn có ca chờ > 60 phút. **Trần tiền ngày sale:** tổng hoàn tự động chạm **300.000đ** (`daily_refund_cap_vnd`, ngân sách Finance riêng 11.11) → mọi khoản sau chuyển NV-HANH. **LLM nghẽn:** `fail_open_rate` > 0,3 → báo kênh; cổng ghi tiền tính lại từ tracking nên không ghi sai, nhưng nếu ca chuyển người tăng theo thì thu hẹp tiếp. **NV-TUNG** quyết, Quân đổi config |
+| Thêm người thì chi phí mỗi ticket và ROI thay đổi thế nào? | Đủ 4 kho: 1 người → 8 ca ùn, chờ 106 phút (`R-S4-after-20261119-163839-8abc69`); 2 người → hết ùn nhưng chi phí **7.584đ/ticket** (> 7.000đ) và **ROI 0,32** (< 0,4). Thu hẹp HN + HCM, 1 người → chi phí **5.747đ/ticket**, **ROI 0,74**. Vì vậy chọn thu hẹp thay vì thêm người |
+
 ---
 
 <a id="b8"></a>
