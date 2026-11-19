@@ -30,8 +30,8 @@ Mọi con số trong quyết định Gate 1 phải trỏ về một dòng ở đ
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | R-base-before-20261119-155220-f6ac62 | base · base | (baseline, chưa có cổng) | 0.9909 [0.9727, 1.0] | 0.9545 | 20.000 · 1 · 0 | 0.2273 | Chưa qua Gate: hoàn sai 20.000đ và có 1 lỗi hãng oan, đều vi phạm ngưỡng bắt buộc. |
-| 2 | | base · after | (cổng vòng 1, thử trước khi chốt) | | | | | |
-| 3 | | base · prepared | (cổng vòng 1 đã chốt) | | | | | |
+| 2 | R-base-after-20261119-161327-6559ea | base · after | (cổng vòng 1, thử trước khi chốt) | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.2364 | Cả 110/110 lượt đạt; không hoàn sai, lỗi hãng oan hay lộ PII. |
+| 3 | R-base-prepared-20261119-162929-6559ea | base · prepared | (cổng vòng 1 đã chốt) | 1.0 [1.0, 1.0] | 1.0 | 0 · 0 · 0 | 0.2364 | Gate đạt tất cả ngưỡng; cả 110/110 lượt đúng, không hoàn sai, lỗi hãng oan hay lộ PII. |
 | 4 | | | | | | | | |
 
 ---
