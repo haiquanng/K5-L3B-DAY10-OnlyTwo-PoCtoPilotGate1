@@ -30,7 +30,7 @@ Mỗi lệnh `lab10.eval` và `lab10.grade` tự ghi một dòng vào `runs/jour
 
 | # | Mã lần chạy | Bộ ticket · mốc | Đổi MỘT thứ gì so với lần trước | pass_rate (khoảng tin cậy 95%) | pass_k | Hoàn sai (đ) · lỗi hãng oan · lộ dữ liệu | Tỉ lệ chuyển người | Kết luận (một câu) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | | Sx · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | | | | | |
+| 1 | `R-S4-prepared-20261119-163417-3c7277` (trong grade `R-S4-grade-20261119-163416-3c7277`) | S4 · prepared | nhận thẻ đã bốc, chưa sửa thêm (đúng cổng vòng 1 đã chốt) | 0.9073 [0.8439, 0.9659] | 0.7805 | 0 · 0 · 0 | 0.4976 | Cổng vòng 1 chặn hết tiền sai và lỗi hãng oan (base 160.000đ · 27), nhưng chuyển người tăng 0,37 → 0,50: 10 ca ùn, tổng hoàn 422.000đ > ngân sách 300.000đ |
 | 2 | | Sx · after | | | | | | |
 | 3 | | Sx · after | | | | | | |
 | 4 | | base · after | (kiểm không regression) | | | | | |
@@ -47,19 +47,21 @@ Chạy **trước khi sửa bất cứ thứ gì**:
 python3 -m lab10.grade --incident Sx
 ```
 
-- Mã lần chạy grade: `__________` · base: `__________` · prepared: `__________`
-- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): …
-- Khối kinh doanh và vận hành còn dòng nào vượt trần: …
+- Mã lần chạy grade: `R-S4-grade-20261119-163416-3c7277` · base: `R-S4-before-20261119-163417-3c7277` · prepared: `R-S4-prepared-20261119-163417-3c7277`
+- Cổng vòng 1 đỡ được ô / con số nào (so cột base với cột prepared): hoàn sai 160.000đ → **0**; lỗi ghi oan cho hãng 27 → **0**; pass_rate 0,8683 → 0,9073; pass_k 0,6829 → 0,7805; tiền hoàn sai ngày tệ nhất 44.000đ → 0. Ô `integrity`, `criteria`, `regression` ✅ (bộ nền 0,9909 → 1,0, không ca mới hỏng). Đổi lại: tỉ lệ chuyển người 0,3659 → 0,4976, chờ lâu nhất 78 → 128 phút, ca ùn 4 → 10, ROI 0,85 → 0,57
+- Khối kinh doanh và vận hành còn dòng nào vượt trần: (1) hàng chờ 10 ca bị ùn; (2) chờ lâu nhất 128 phút > 60 phút bàn đặt; (3) tổng hoàn tự động 422.000đ > ngân sách Finance ngày 11.11 là 300.000đ. Ngưỡng đã ký chưa đạt: pass_k 0,7805 < 0,85; queue_stuck 10 > 0. Report: "KHÔNG đủ căn cứ để chọn Tiếp tục"
 
 **Mở lại pre-mortem (Phiếu B mục B6), viết bằng bút khác màu.** Với thẻ S1, S3, S4, S5 đây là một phần của phần riêng theo thẻ.
 
-- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? …
-- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? …
+- Sự cố trên thẻ thuộc lăng kính nào (kỹ thuật, kinh doanh, con người và vận hành, pháp lý)? Chủ yếu **con người và vận hành** (1 người duyệt, ticket gấp ba trong một giờ), kèm **kinh doanh** (ngân sách hoàn riêng ngày sale 300.000đ) và **kỹ thuật** (LLM trả 429 ở 60% lần `policy_check` → nhánh `fail_open`)
+- Có nằm trong các lý do bàn đã viết không? Nếu có: cổng vòng 1 đã đỡ được bao nhiêu (đọc cột prepared trong report)? Nếu không: vì sao cả bàn không nghĩ tới? **Có, cả ba nhánh đều nằm trong B6**: dòng 2 (LLM lỗi → `fail_open` ghi lỗi hãng, hoàn phí không cần nguyên nhân), dòng 3 (vượt ngân sách Finance), dòng 5 (một người duyệt, giờ cao điểm quá 60 phút); B7.6 cũng đã tính cao điểm ≈ 8 ticket/giờ. Cổng vòng 1 đỡ trọn nhánh tiền và hãng (0đ, 0 lỗi oan). **Bàn không nghĩ tới tương tác giữa các cổng**: cổng an toàn chuyển người mỗi khi lệch, đúng lúc hàng chờ đã ngập, nên đỡ nhánh tiền lại làm nặng nhánh người. Trần ngày của bàn là con số cố định 1.400.000đ, không theo ngân sách Finance đổi theo ngày
 - Lý do còn thiếu, thêm bây giờ:
 
 | Lý do thất bại (viết ở thì quá khứ) | Lăng kính | Kiểm được bằng gì (trace / data / config nào) |
 |---|---|---|
-| | | |
+| Cổng an toàn chuyển người mọi ca lệch đúng lúc LLM nghẽn; ca chuyển dồn vào giờ sale, một người duyệt không kịp, khách chờ 2 tiếng | Con người và vận hành | Report grade: tỉ lệ chuyển người 0,37 → 0,50, ca ùn 4 → 10; trace `S4-02@11` dòng 10 `gate escalate` |
+| Cổng chặn ở bước ghi lỗi hãng sau khi tiền đã vào sổ: ca vừa được hoàn vừa nằm trong hàng chờ, người duyệt có thể hoàn lần hai | Kỹ thuật | Trace `S4-02@11` (prepared): `SỔ CÁI` có 22.000đ, `result: escalated` |
+| Finance chốt ngân sách hoàn riêng cho ngày sale (300.000đ) nhưng trần của trợ lý là con số cố định 1.400.000đ, không ai được báo khi vượt | Kinh doanh | `incidents/S4/world_patch.json` → `ops_limits.daily_auto_refund_budget_vnd`; report: 422.000đ > 300.000đ |
 
 ---
 
@@ -76,33 +78,33 @@ python3 -m lab10.trace --suite Sx --ticket <ID> --seed 11
 Ba loại lỗi: **giới hạn của hệ thống** · **lỗi ngữ cảnh** · **lỗi chìm** (cả người dùng lẫn hệ thống đều không nhận ra; nguy hiểm nhất,
 người chịu hại thường là bên thứ ba). Định nghĩa đầy đủ và ví dụ: Phiếu B mục B2.
 
-**Tác hại của thẻ:** cho ai `____` · đo bằng gì `____` · bao nhiêu ở mốc base `____`
+**Tác hại của thẻ:** cho ai `khách chờ quá hạn; hãng (VNX, GHSH…) bị ghi lỗi oan cho đơn do shop bàn giao muộn; Finance/kế toán NV-OANH (vượt ngân sách ngày sale); NV-HANH quá tải` · đo bằng gì `số ca bị ùn và chờ lâu nhất; wrongful_carrier_faults; wrongful_refund_vnd; tổng hoàn tự động một ngày so với ngân sách` · bao nhiêu ở mốc base `4 ca ùn, chờ lâu nhất 78 phút; 27 lỗi hãng oan; hoàn sai 160.000đ; tổng hoàn 466.000đ > 300.000đ (R-S4-before-20261119-163417-3c7277)`
 
 ### Phần 1 · Ghi lỗi (bằng chứng là mã ticket@seed và dòng trace, không tả chung chung)
 
 | # | Lỗi: người ta thấy gì (dán dòng trace / sổ cái) | Ai gặp, ai chịu | Hệ trọng (thấp / cao) | Loại lỗi (giới hạn hệ thống / ngữ cảnh / chìm) |
 |---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
+| 1 | `S4-02@11` mốc **base**, dòng 04–06: `llm_error 429` hai lần → `llm_fallback fail_open`; dòng 07 `proposal … "basis": "fail_open", "do_fault": true`; dòng 09 `file_carrier_fault … carrier_id: VNX` trong khi tracking ghi `cause: MERCHANT_HANDOVER` (shop bàn giao muộn). `LỖI HÃNG: [{… 'carrier_id': 'VNX' …}]` | Hãng VNX bị ghi lỗi oan (phạt 100.000đ/lỗi); khách không thấy gì sai; chị Oanh đối soát lệch. Cả gói: 27 lỗi oan | cao | **lỗi chìm** |
+| 2 | `S4-02@11` mốc **prepared**, dòng 08 `issue_refund 22000 … basis: fail_open` đã ghi sổ; dòng 09–10 cổng `fault_mismatch` → `gate file_carrier_fault: escalate`; dòng 11 `result: escalated`. `SỔ CÁI: [{… 'amount_vnd': 22000 …}]` mà ticket vẫn vào hàng chờ. Cùng kiểu: `S4-08@55`, `S4-13@11`, `S4-17@11`, `S4-21@44` (19 lượt hỏng ở prepared đều kiểu này) | NV-HANH nhận ca đã được hoàn, có thể hoàn lần hai; khách được báo đã chuyển người dù tiền đã về; hàng chờ thêm ca | cao | **lỗi chìm** (sổ cái và trạng thái ticket mâu thuẫn, không ai được báo) |
+| 3 | Report grade `R-S4-grade-20261119-163416-3c7277`, cột prepared: 30/41 ticket tới trong phút 240–300 (một giờ sau 20h); tỉ lệ chuyển người 0,5024; 1 người × 6 ca/giờ → **10 ca bị ùn, chờ lâu nhất 128 phút**; `S4-07@11` (mỹ phẩm vỡ, `DAMAGED`) buộc chuyển người. Tổng hoàn tự động 422.000đ > 300.000đ | Khách chờ hơn 2 tiếng; NV-HANH quá tải; Finance vượt ngân sách ngày sale | cao | **giới hạn của hệ thống** (sức duyệt của người và ngân sách ngày) |
 
 ### Phần 2 · Tìm nguồn (đánh dấu câu nào đúng với từng lỗi)
 
 | Câu hỏi | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | | | |
-| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | | | |
-| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | | | |
-| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | | | |
+| **Đầu vào:** hệ thống có tự diễn giải / sửa đầu vào của người dùng theo cách họ không lường? Có đặt sai trọng số cho một lời nói hay tín hiệu của người dùng? | Không: khách nói đúng là shop xuất kho trễ, trợ lý không dùng số khách khai | Không | Có một phần: ticket hàng vỡ, thất lạc không thuộc phạm vi tự động nên mọi ca loại này đều thành việc của người |
+| **Độ liên quan:** hệ thống có thiếu dữ liệu cần để quyết đúng? Dữ liệu vào có nhiễu, thiếu ổn định? | Không thiếu: tracking có `cause: MERCHANT_HANDOVER`; nhánh `fail_open` bỏ qua dữ liệu này | Không thiếu: cổng đã biết nguyên nhân không phải lỗi hãng | Trợ lý không biết hàng chờ đang dài bao nhiêu và ngân sách ngày đổi thành 300.000đ (trần bàn vẫn 1.400.000đ) |
+| **Thứ bậc hệ thống:** có hai hệ thống cùng ghi / cùng theo dõi một thứ mà không rõ bên nào là chủ (ví dụ CSKH hoàn tay và trợ lý cùng ghi sổ)? | Không | **Có**: trợ lý đã ghi hoàn tiền, rồi cổng giao ca cho NV-HANH xử lý lại; không rõ ai là chủ khoản hoàn | Có: trợ lý quyết chuyển người, nhưng sức duyệt do vận hành quyết; không bên nào thấy cả hai |
+| **Trạng thái hỏng:** nhiều lỗi cộng lại có làm tính năng không dùng được (ví dụ LLM lỗi liên tiếp)? | **Có**: LLM trả 429 ở 60% lần `policy_check` (`llm_faults`) → `fail_open` "giữ khách vui" ghi tiền và ghi lỗi hãng | Có: chính lỗi 429 sinh ra `fail_open`, cổng chặn muộn ở lệnh ghi thứ hai | **Có**: 429 + cổng chuyển người + ticket gấp ba cộng lại làm hàng chờ ngập |
 
 ### Phần 3 · Hướng xử lý (mỗi lỗi một ô)
 
 | | Lỗi 1 | Lỗi 2 | Lỗi 3 |
 |---|---|---|---|
-| Vì sao người gặp coi đây là lỗi | | | |
-| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | | | |
-| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | | | |
-| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | | | |
+| Vì sao người gặp coi đây là lỗi | Theo REFUND-v3, `MERCHANT_HANDOVER` không thuộc `fault_causes`: shop mới là bên trễ, VNX không có lỗi mà vẫn bị phạt | Khoản hoàn đã ghi nhưng ticket báo "chuyển người": sổ cái và trạng thái mâu thuẫn, có thể hoàn hai lần | Khách chờ quá hạn 60 phút đã cam kết; Finance bị vượt ngân sách ngày sale |
+| Kiểu giải pháp: phản hồi cho người dùng / trao quyền kiểm soát cho người / khác | Khác (cổng code): khi LLM lỗi, tự tính quyền lợi và lỗi hãng bằng `helpers` (không cần LLM), không ghi lỗi hãng khi nguyên nhân không thuộc `fault_causes` | Khác (cổng code): ở bước ghi lỗi hãng chỉ **bỏ riêng lệnh ghi lỗi** (`deny`) thay vì chuyển cả ticket, giữ khoản hoàn đúng | Trao quyền kiểm soát cho người + con số: người trực giờ cao điểm, kiểm mẫu giờ sale, trần hoàn ngày theo ngân sách Finance |
+| Đường đi của người sau khi có giải pháp (ví dụ: ticket chuyển sang người duyệt → duyệt → khách được trả lời) | Khách được hoàn đúng phí ship → không có lỗi hãng → chị Oanh đối soát khớp tracking | Khách nhận 22.000đ và câu trả lời đúng → ticket đóng, không vào hàng chờ | Ca hàng vỡ vào hàng chờ → được nhận trong 60 phút → NV-HANH xử lý; khoản hoàn vượt trần ngày chuyển NV-HANH duyệt |
+| Hệ thống học được gì (tín hiệu ghi lại để theo dõi: tên metric trong `monitors.py`) | Chỉ số mới (C8): tỉ lệ lệnh ghi trong nhánh `fail_open` | Chỉ số mới (C8): ca bị chuyển người sau khi đã có dòng sổ cái | `queue_stuck`, chờ lâu nhất (report); tổng hoàn tự động so với ngân sách |
 
 Yêu cầu: ít nhất **hai lỗi có nguồn khác nhau** ở phần 2, và ít nhất một lỗi được xếp đúng là **lỗi chìm**.
 
