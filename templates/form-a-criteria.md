@@ -52,12 +52,12 @@ trợ lý có đang gây thiệt hại cho bên ngoài LogiX không; không có 
 
 | | Offline, cho MỘT bước (câu 1.3) | Telemetry production (câu 1.4) |
 |---|---|---|
-| **Bước / hành vi được đo** | Chọn độ trễ giao hàng để tính số tiền hoàn. | |
-| **Thước đo** (một câu, có đơn vị) | Tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB, tính bằng phần trăm (%). | |
-| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | Lấy `proposal.delay_days_used` và `tracking.db_delay_days` từ trace trong `runs/<mã lần chạy>/traces/` trên bộ nền 22 ticket × 5 seed. Nhãn sai do code tự động xác định: hai giá trị độ trễ không bằng nhau. Bàn không cần gán nhãn thủ công. | |
-| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | `Tỉ lệ sai độ trễ = số lần proposal có delay_days_used khác db_delay_days / tổng số lần chạy có sự kiện proposal`. Ca không đi tới bước `proposal` bị loại khỏi mẫu số và được đếm riêng trong báo cáo luồng hỏng. | |
+| **Bước / hành vi được đo** | Tìm phê duyệt cho khoản hoàn vượt `auto_limit_vnd` của chính sách đang áp dụng. | |
+| **Thước đo** (một câu, có đơn vị) | Tỉ lệ (%) ca cần kiểm tra phê duyệt mà agent chọn đúng phê duyệt còn hiệu lực, đủ hạn mức và đúng phạm vi; nếu không có bản ghi phù hợp thì chuyển người duyệt mà không ghi hoàn. | |
+| **Dữ liệu** (lấy ở đâu, bao nhiêu, ai gán nhãn) | Trace của 22 ticket × 5 seed: sự kiện `proposal`, `approval_used`, kết quả `issue_refund` và trạng thái cuối; đối chiếu bản ghi `approvals` trong `data/world.json` với `as_of`, `status`, `expires_at`, `max_vnd` và phạm vi ticket/đơn/khách. Người phụ trách Sản phẩm gán nhãn theo các bản ghi nguồn; Kỹ sư cổng rà lại quy tắc và mẫu số. | |
+| **Cách tính** (công thức, mẫu số, cách xử lý ca thiếu dữ liệu) | Mẫu số là các lần chạy được xác định trước là cần tra phê duyệt; tử số là số ca chọn đúng bản ghi hợp lệ và đủ hạn mức, hoặc chuyển duyệt khi không có bản ghi phù hợp và không ghi tiền. Chia tử số cho mẫu số × 100%. Bỏ khỏi mẫu số ca không vượt hạn mức/được phê duyệt trước; thiếu trace cần thiết thì đánh dấu không chấm được và rà soát, không tính là đạt. | |
 | **Khung thời gian / ngưỡng báo động** | (không áp dụng) | |
-| **Điểm mù** (thước đo này KHÔNG thấy gì) | Không phát hiện lỗi ở chính sách, phê duyệt, số tiền bồi thường hoặc tracking DB thực tế; chỉ thấy sự khác biệt giữa độ trễ agent dùng và độ trễ trong DB. | |
+| **Điểm mù** (thước đo này KHÔNG thấy gì) | Không đánh giá agent tính đúng số tiền hoàn hay chọn đúng chính sách; chỉ kiểm tra việc tìm/đối chiếu phê duyệt trước khoản hoàn vượt hạn mức tự động. | |
 
 **Ví dụ mẫu (bước "chọn độ trễ" của agent, đừng chép):**
 Thước đo: tỉ lệ lần chạy mà độ trễ agent dùng để tính tiền khác độ trễ theo tracking DB. Dữ liệu: sự kiện `proposal.delay_days_used`
