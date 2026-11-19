@@ -68,12 +68,30 @@ Vận hành và pháp lý, gom bài nộp. Câu 1.2, 1.4, 2.4, 2.10, 3.1 (phần
 
 ### Đóng góp cụ thể
 
-...
+**Vòng 1**
+- **Câu 1.2 (Phiếu A, A1):** mục tiêu nhìn từ chị Oanh (đối soát được 100% khoản hoàn và lỗi hãng, 0 hoàn oan, 0 lỗi ghi oan, không vượt ngân sách 2.000.000đ/ngày) và chị Hạnh (≤ 6 ca/giờ, không ca nào chờ quá 60 phút, có ghi chú để kiểm mẫu).
+- **Câu 1.4 (Phiếu A, A2 cột phải):** telemetry production cho hành vi ghi lỗi hãng: số lỗi tự động/hãng trong 24 giờ và 7 ngày, tỉ lệ lỗi có `delay_cause ∉ fault_causes`; ngưỡng vàng/đỏ khớp `ops_limits` và `wrongful_carrier_faults_max = 0`. Sửa lại định nghĩa "khớp" sau khi đối chiếu nhãn T-006 (`FORCE_MAJEURE` vẫn ghi lỗi cho MKD).
+- **Câu 2.4 (Phiếu B, B4):** HAZOP vòng 1 trên `file_carrier_fault`, 4 dòng kỹ thuật (ghi lỗi cho hãng của kiện đầu tiên thay vì kiện trễ nhất; nhánh `fail_open` ghi lỗi bất kể nguyên nhân; không đếm lỗi/hãng/ngày; chép `customer_note` và `recipient_contact` sang hãng) và 3 dòng ngoài kỹ thuật (người duyệt, ngân sách, dữ liệu gửi bên thứ ba).
+- **Câu 2.4 (Phiếu B, B5):** checklist 9 nhóm việc lần 1, mỗi dòng một PIC có tên; cập nhật dòng 1 bằng lần chạy base.
+- **Câu 2.10:** điền `config/operating_gates.json` mục `operations` (PIC `NV-TUNG`, người duyệt `NV-HANH`, 1 người trực × 6 ca/giờ, chờ tối đa 60 phút, 7 điều kiện dừng, kênh cảnh báo, `decision_note = true`, kiểm mẫu 10%) và `legal` (chặn `recipient_contact`, `customer_note` gửi hãng; bắt buộc có nguyên nhân ghi nhận khi ghi lỗi hãng).
+- **B7.5, B7.6:** runbook phần 1–3 khớp các con số trong config (dừng tối đa 15 phút, NV-TUNG bấm) và mục giờ cao điểm (ước tính tải từ `ops_facts` và lần chạy base).
+
+**Vòng 2** (bổ sung sau khi có thẻ): C3, C4, C5 câu 3.3, câu 3.5 phần `operations`/`legal`, C9, C10, C11 (runbook 4–5), `submission/submission.json`.
 
 ### Bằng chứng
 
-Mã commit, mã lần chạy (`runs/<mã>`), dòng trong phiếu.
+Các commit có tiền tố `[Nguyen]` (tác giả git hiển thị mã trưởng nhóm `2A202603994` theo README bước 2a; email `2A202604005@example.com`):
+
+| Commit | Nội dung |
+|---|---|
+| `33f1e4e` | Phiếu A câu 1.2, 1.4 |
+| `eef94d1` | Phiếu B mục B4 (HAZOP vòng 1), B5 (checklist lần 1); sửa câu 1.4 theo `fault_causes` |
+| `5fb4a7e` | Câu 2.10: `config/operating_gates.json` mục `operations`, `legal` |
+| `69cbf63` | Phiếu B mục B7.5 (runbook 1–3), B7.6 (giờ cao điểm) |
+| `e8b4fd8` | Phiếu B mục B5 dòng 1: bằng chứng lần chạy base |
+
+Lần chạy dùng làm bằng chứng: `R-base-before-20261119-155220-f6ac62` (B5 dòng 1, B7.6).
 
 ### Exit ticket
 
-Một điều học được, một điều còn chưa chắc.
+Một điều học được, một điều còn chưa chắc. *(viết cuối buổi)*
